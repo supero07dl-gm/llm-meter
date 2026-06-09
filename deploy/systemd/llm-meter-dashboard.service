@@ -1,0 +1,22 @@
+[Unit]
+Description=LLM Meter web dashboard
+After=network.target llm-meter-ingest.service
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/llm-meter
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/usr/local/bin/llm-meter serve --db /var/lib/llm-meter/llm-meter.db --host 127.0.0.1 --port 8765
+Restart=always
+RestartSec=5
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/llm-meter
+
+[Install]
+WantedBy=multi-user.target

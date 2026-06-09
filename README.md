@@ -179,6 +179,11 @@ log_format llm_gateway '$remote_addr realip=$realip_remote_addr cf=$http_cf_conn
 
 Full example: [docs/nginx.md](docs/nginx.md)
 
+Gateway presets:
+
+- [LiteLLM / OneAPI / NewAPI / LocalAI / Ollama / CLIProxyAPI](docs/gateway-presets.md)
+- [systemd deployment examples](docs/systemd.md)
+
 ## Supported inputs
 
 | Source | Status |
@@ -197,7 +202,7 @@ Full example: [docs/nginx.md](docs/nginx.md)
 - [x] Prometheus exporter
 - [ ] Telegram / Discord / webhook alerts
 - [x] Cloudflare Logpush parser
-- [ ] LiteLLM / OneAPI / NewAPI specific presets
+- [x] LiteLLM / OneAPI / NewAPI specific presets
 - [x] Docker Compose example
 - [ ] Homebrew / PyPI package
 

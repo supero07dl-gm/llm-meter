@@ -1,0 +1,24 @@
+[Unit]
+Description=LLM Meter follow-mode log ingester
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/llm-meter
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/usr/local/bin/llm-meter ingest /var/log/nginx/llm-gateway-access.log --db /var/lib/llm-meter/llm-meter.db --follow --batch-size 100
+Restart=always
+RestartSec=5
+
+# Hardening. Adjust ReadWritePaths if your log/db paths differ.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadOnlyPaths=/var/log/nginx
+ReadWritePaths=/var/lib/llm-meter
+
+[Install]
+WantedBy=multi-user.target
