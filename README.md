@@ -102,6 +102,15 @@ Docker Compose:
 docker compose run --rm llm-meter
 ```
 
+Generate a local demo pack for screenshots or quick evaluation:
+
+```bash
+python3 -m llm_meter demo --output-dir /tmp/llm-meter-demo
+# open /tmp/llm-meter-demo/demo-report.html
+```
+
+The demo command writes deterministic sample JSONL logs, a SQLite database, and a static HTML dashboard report with traffic, token, cost, model, and alert-signal data.
+
 ## Example output
 
 ```text
@@ -297,6 +306,7 @@ Gateway presets:
 - [x] SQLite retention pruning
 - [x] Token / cost analytics from JSON logs
 - [x] Budget alert rules for cost and token usage
+- [x] Demo data + static report generator
 - [ ] Homebrew / PyPI package
 - [ ] Richer dashboard charts
 

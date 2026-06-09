@@ -10,6 +10,7 @@ from .alerts import build_alert_payload, format_alert_text, send_webhook, should
 from .analyzer import analyze_lines, format_text
 from .config import load_config
 from .dashboard import render_dashboard, serve_dashboard
+from .demo import create_demo
 from .prometheus import serve_prometheus
 from .storage import hourly_counts, ingest_lines, prune_db, report_from_db
 from .tail import follow_file
@@ -121,6 +122,18 @@ def cmd_prune(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_demo(args: argparse.Namespace) -> int:
+    result = create_demo(args.output_dir, rows=args.rows)
+    if args.json:
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+    else:
+        print("LLM Meter demo generated")
+        print(f"  log:  {result['log_path']}")
+        print(f"  db:   {result['db_path']}")
+        print(f"  html: {result['html_path']}")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="llm-meter",
@@ -189,6 +202,12 @@ def build_parser() -> argparse.ArgumentParser:
     prune.add_argument("--keep-days", type=int, help="keep entries newer than this many days")
     prune.add_argument("--json", action="store_true", help="emit JSON")
     prune.set_defaults(func=cmd_prune)
+
+    demo = sub.add_parser("demo", help="generate deterministic demo logs, SQLite data, and HTML report")
+    demo.add_argument("--output-dir", required=True, help="directory for demo artifacts")
+    demo.add_argument("--rows", type=int, default=96, help="number of demo log rows")
+    demo.add_argument("--json", action="store_true", help="emit JSON")
+    demo.set_defaults(func=cmd_demo)
 
     return parser
 
