@@ -215,6 +215,13 @@ python3 -m llm_meter export-bundle --db llm-meter.db --output llm-meter-report.z
 
 The bundle contains `report.html`, `report.md`, `report.json`, and `manifest.json`.
 
+Export raw stored entries as CSV for spreadsheets, incident forensics, or ad-hoc analysis:
+
+```bash
+python3 -m llm_meter export-csv --db llm-meter.db --output entries.csv
+python3 -m llm_meter export-csv --db llm-meter.db --output recent.csv --limit 1000
+```
+
 This is useful for attaching reports to issues, incident notes, or status pages without running the live dashboard.
 
 ## Token and cost analytics
@@ -350,6 +357,7 @@ Gateway presets:
 - [x] Deployment doctor diagnostics
 - [x] Markdown report export
 - [x] Shareable report bundle export
+- [x] CSV raw entry export
 - [x] Config validation command
 - [ ] Homebrew / PyPI package
 - [ ] Richer dashboard charts

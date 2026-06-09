@@ -10,6 +10,7 @@ from .alerts import build_alert_payload, format_alert_text, send_webhook, should
 from .analyzer import analyze_lines, format_text
 from .bundle import export_bundle
 from .config import format_validation_text, load_config, validate_config
+from .csv_export import export_csv
 from .dashboard import render_dashboard, serve_dashboard
 from .demo import create_demo
 from .doctor import format_doctor_text, run_doctor
@@ -122,6 +123,15 @@ def cmd_export_bundle(args: argparse.Namespace) -> int:
         print(json.dumps(result, indent=2, ensure_ascii=False))
     else:
         print(f"wrote {result['output']}")
+    return 0
+
+
+def cmd_export_csv(args: argparse.Namespace) -> int:
+    result = export_csv(args.db, args.output, limit=args.limit)
+    if args.json:
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+    else:
+        print(f"wrote {result['output']} ({result['rows']} rows)")
     return 0
 
 
@@ -246,6 +256,13 @@ def build_parser() -> argparse.ArgumentParser:
     bundle.add_argument("--top", type=int, default=10, help="top N rows per section")
     bundle.add_argument("--json", action="store_true", help="emit JSON")
     bundle.set_defaults(func=cmd_export_bundle)
+
+    csv_export = sub.add_parser("export-csv", help="export raw SQLite entries as CSV")
+    csv_export.add_argument("--db", required=True, help="SQLite database path")
+    csv_export.add_argument("--output", required=True, help="output CSV file")
+    csv_export.add_argument("--limit", type=int, help="only export the newest N ingested entries")
+    csv_export.add_argument("--json", action="store_true", help="emit JSON")
+    csv_export.set_defaults(func=cmd_export_csv)
 
     prune = sub.add_parser("prune", help="delete old SQLite entries by retention window")
     prune.add_argument("--db", help="SQLite database path")

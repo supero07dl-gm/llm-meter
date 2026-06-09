@@ -167,6 +167,13 @@ python3 -m llm_meter export-bundle --db llm-meter.db --output llm-meter-report.z
 
 bundle 内包含 `report.html`、`report.md`、`report.json` 和 `manifest.json`。
 
+导出原始入库记录为 CSV，方便丢进表格、做事故复盘或临时分析：
+
+```bash
+python3 -m llm_meter export-csv --db llm-meter.db --output entries.csv
+python3 -m llm_meter export-csv --db llm-meter.db --output recent.csv --limit 1000
+```
+
 ## Docker
 
 ```bash
@@ -283,6 +290,7 @@ deploy/systemd/
 - [x] 部署 doctor 诊断命令
 - [x] Markdown 报告导出
 - [x] 可分享 report bundle 导出
+- [x] CSV 原始记录导出
 - [x] 配置校验命令
 - [ ] PyPI / Homebrew 发布
 - [ ] 更完整的 Dashboard 图表
