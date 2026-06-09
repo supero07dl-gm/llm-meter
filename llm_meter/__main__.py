@@ -8,7 +8,7 @@ from pathlib import Path
 from . import __version__
 from .alerts import build_alert_payload, format_alert_text, send_webhook, should_alert
 from .analyzer import analyze_lines, format_text
-from .dashboard import serve_dashboard
+from .dashboard import render_dashboard, serve_dashboard
 from .prometheus import serve_prometheus
 from .storage import hourly_counts, ingest_lines, report_from_db
 from .tail import follow_file
@@ -89,6 +89,13 @@ def cmd_alert(args: argparse.Namespace) -> int:
     return 1 if payload.get("signals") and args.exit_code else 0
 
 
+def cmd_export_html(args: argparse.Namespace) -> int:
+    html = render_dashboard(args.db)
+    Path(args.output).write_text(html, encoding="utf-8")
+    print(f"wrote {args.output}")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="llm-meter",
@@ -144,6 +151,11 @@ def build_parser() -> argparse.ArgumentParser:
     alert.add_argument("--top", type=int, default=10, help="top N IPs in payload")
     alert.add_argument("--timeout", type=float, default=10.0, help="webhook timeout seconds")
     alert.set_defaults(func=cmd_alert)
+
+    html = sub.add_parser("export-html", help="export a static HTML dashboard report")
+    html.add_argument("--db", required=True, help="SQLite database path")
+    html.add_argument("--output", required=True, help="output HTML file")
+    html.set_defaults(func=cmd_export_html)
 
     return parser
 

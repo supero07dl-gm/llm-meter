@@ -1,5 +1,7 @@
 # LLM Meter
 
+[English](README.md) | [简体中文](README_CN.md)
+
 <p align="center">
   <img src="assets/banner.svg" alt="LLM Meter banner" width="100%">
 </p>
@@ -159,6 +161,16 @@ scrape_configs:
 
 High-cardinality metrics like IPs and paths are capped with `--top`.
 
+## Static HTML export
+
+Export a shareable dashboard report as a single HTML file:
+
+```bash
+python3 -m llm_meter export-html --db llm-meter.db --output report.html
+```
+
+This is useful for attaching reports to issues, incident notes, or status pages without running the live dashboard.
+
 ## Alerts and webhooks
 
 Print current abuse/health signals:
@@ -226,7 +238,9 @@ Gateway presets:
 - [x] Cloudflare Logpush parser
 - [x] LiteLLM / OneAPI / NewAPI specific presets
 - [x] Docker Compose example
+- [x] Static HTML report export
 - [ ] Homebrew / PyPI package
+- [ ] Richer dashboard charts
 
 ## Inspirations
 
