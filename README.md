@@ -112,6 +112,8 @@ python3 -m llm_meter demo --output-dir /tmp/llm-meter-demo
 
 The demo command writes deterministic sample JSONL logs, a SQLite database, a static HTML dashboard report, and a zipped share bundle with traffic, token, cost, model, and alert-signal data.
 
+See [docs/demo.md](docs/demo.md) for the full demo pack walkthrough and safe sharing notes.
+
 Diagnose a deployment before wiring it into cron/systemd:
 
 ```bash
@@ -305,6 +307,7 @@ Full example: [docs/nginx.md](docs/nginx.md)
 
 Gateway presets:
 
+- [Demo pack walkthrough](docs/demo.md)
 - [LiteLLM / OneAPI / NewAPI / LocalAI / Ollama / CLIProxyAPI](docs/gateway-presets.md)
 - [systemd deployment examples](docs/systemd.md)
 
@@ -337,6 +340,7 @@ Gateway presets:
 - [x] Budget alert rules for cost and token usage
 - [x] Demo data + static report generator
 - [x] Demo share bundle generator
+- [x] Demo pack walkthrough docs
 - [x] Deployment doctor diagnostics
 - [x] Markdown report export
 - [x] Shareable report bundle export

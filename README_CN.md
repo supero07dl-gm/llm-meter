@@ -187,6 +187,8 @@ python3 -m llm_meter demo --output-dir /tmp/llm-meter-demo
 
 `demo` 命令会生成确定性的示例 JSONL 日志、SQLite 数据库、静态 HTML Dashboard 报告和 ZIP 分享包，里面包含流量、Token、成本、模型和告警信号数据。
 
+完整 demo 包说明和安全分享注意事项见：[docs/demo.md](docs/demo.md)。
+
 在接入 cron / systemd 前，可以先做部署诊断：
 
 ```bash
@@ -218,6 +220,7 @@ log_format llm_gateway '$remote_addr realip=$realip_remote_addr cf=$http_cf_conn
 
 完整配置见：
 
+- [docs/demo.md](docs/demo.md)
 - [docs/nginx.md](docs/nginx.md)
 - [docs/gateway-presets.md](docs/gateway-presets.md)
 - [docs/systemd.md](docs/systemd.md)
@@ -270,6 +273,7 @@ deploy/systemd/
 - [x] 成本和 Token 预算告警规则
 - [x] Demo 数据和静态报告生成器
 - [x] Demo ZIP 分享包生成器
+- [x] Demo 包说明文档
 - [x] 部署 doctor 诊断命令
 - [x] Markdown 报告导出
 - [x] 可分享 report bundle 导出
