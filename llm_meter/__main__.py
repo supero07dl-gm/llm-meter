@@ -11,6 +11,7 @@ from .analyzer import analyze_lines, format_text
 from .config import load_config
 from .dashboard import render_dashboard, serve_dashboard
 from .demo import create_demo
+from .doctor import format_doctor_text, run_doctor
 from .prometheus import serve_prometheus
 from .storage import hourly_counts, ingest_lines, prune_db, report_from_db
 from .tail import follow_file
@@ -134,6 +135,15 @@ def cmd_demo(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_doctor(args: argparse.Namespace) -> int:
+    result = run_doctor(db_path=args.db, config_path=args.config, log_path=args.log)
+    if args.json:
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+    else:
+        print(format_doctor_text(result))
+    return 0 if result["ok"] else 1
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="llm-meter",
@@ -208,6 +218,13 @@ def build_parser() -> argparse.ArgumentParser:
     demo.add_argument("--rows", type=int, default=96, help="number of demo log rows")
     demo.add_argument("--json", action="store_true", help="emit JSON")
     demo.set_defaults(func=cmd_demo)
+
+    doctor = sub.add_parser("doctor", help="diagnose config, database, and log parseability")
+    doctor.add_argument("--db", help="SQLite database path")
+    doctor.add_argument("--config", help="llm-meter YAML config path")
+    doctor.add_argument("--log", help="gateway log path to sample")
+    doctor.add_argument("--json", action="store_true", help="emit JSON")
+    doctor.set_defaults(func=cmd_doctor)
 
     return parser
 

@@ -169,6 +169,17 @@ python3 -m llm_meter demo --output-dir /tmp/llm-meter-demo
 
 `demo` 命令会生成确定性的示例 JSONL 日志、SQLite 数据库和静态 HTML Dashboard 报告，里面包含流量、Token、成本、模型和告警信号数据。
 
+在接入 cron / systemd 前，可以先做部署诊断：
+
+```bash
+python3 -m llm_meter doctor \
+  --config examples/llm-meter.yml \
+  --db /var/lib/llm-meter/llm-meter.db \
+  --log /var/log/nginx/llm-gateway-access.log
+```
+
+`doctor` 会检查配置文件解析、SQLite 可读性，以及日志样本是否能被解析。
+
 ## Nginx 日志格式
 
 推荐使用自定义 log format，这样能统计 host、auth prefix、延迟等字段：
@@ -240,6 +251,7 @@ deploy/systemd/
 - [x] JSON 日志 Token / 成本分析
 - [x] 成本和 Token 预算告警规则
 - [x] Demo 数据和静态报告生成器
+- [x] 部署 doctor 诊断命令
 - [ ] PyPI / Homebrew 发布
 - [ ] 更完整的 Dashboard 图表
 

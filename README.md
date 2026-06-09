@@ -111,6 +111,17 @@ python3 -m llm_meter demo --output-dir /tmp/llm-meter-demo
 
 The demo command writes deterministic sample JSONL logs, a SQLite database, and a static HTML dashboard report with traffic, token, cost, model, and alert-signal data.
 
+Diagnose a deployment before wiring it into cron/systemd:
+
+```bash
+python3 -m llm_meter doctor \
+  --config examples/llm-meter.yml \
+  --db /var/lib/llm-meter/llm-meter.db \
+  --log /var/log/nginx/llm-gateway-access.log
+```
+
+`doctor` checks config parsing, SQLite readability, and whether a sample of your gateway log is parseable.
+
 ## Example output
 
 ```text
@@ -307,6 +318,7 @@ Gateway presets:
 - [x] Token / cost analytics from JSON logs
 - [x] Budget alert rules for cost and token usage
 - [x] Demo data + static report generator
+- [x] Deployment doctor diagnostics
 - [ ] Homebrew / PyPI package
 - [ ] Richer dashboard charts
 
