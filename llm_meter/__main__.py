@@ -8,9 +8,10 @@ from pathlib import Path
 from . import __version__
 from .alerts import build_alert_payload, format_alert_text, send_webhook, should_alert
 from .analyzer import analyze_lines, format_text
+from .config import load_config
 from .dashboard import render_dashboard, serve_dashboard
 from .prometheus import serve_prometheus
-from .storage import hourly_counts, ingest_lines, report_from_db
+from .storage import hourly_counts, ingest_lines, prune_db, report_from_db
 from .tail import follow_file
 
 
@@ -72,17 +73,25 @@ def cmd_export_prometheus(args: argparse.Namespace) -> int:
 
 
 def cmd_alert(args: argparse.Namespace) -> int:
-    payload = build_alert_payload(args.db, top=args.top)
+    config = load_config(args.config)
+    db = args.db or config.database
+    if not db:
+        raise SystemExit("alert requires --db or database in --config")
+    webhook_url = args.webhook_url or config.alert.webhook_url
+    include_ok = args.include_ok or config.alert.include_ok
+    top = args.top if args.top is not None else config.alert.top
+    timeout = args.timeout if args.timeout is not None else config.alert.timeout
+    payload = build_alert_payload(db, top=top, rules=config.alert.rules.to_dict())
     if args.text:
         body = format_alert_text(payload)
         print(body)
     else:
         print(json.dumps(payload, indent=2, ensure_ascii=False))
 
-    if not should_alert(payload, include_ok=args.include_ok):
+    if not should_alert(payload, include_ok=include_ok):
         return 0
-    if args.webhook_url and not args.dry_run:
-        status, response_body = send_webhook(args.webhook_url, payload, timeout=args.timeout)
+    if webhook_url and not args.dry_run:
+        status, response_body = send_webhook(webhook_url, payload, timeout=timeout)
         print(f"webhook_status={status}")
         if response_body:
             print(response_body[:500])
@@ -93,6 +102,22 @@ def cmd_export_html(args: argparse.Namespace) -> int:
     html = render_dashboard(args.db)
     Path(args.output).write_text(html, encoding="utf-8")
     print(f"wrote {args.output}")
+    return 0
+
+
+def cmd_prune(args: argparse.Namespace) -> int:
+    config = load_config(args.config)
+    db = args.db or config.database
+    keep_days = args.keep_days or config.retention_days
+    if not db:
+        raise SystemExit("prune requires --db or database in --config")
+    if not keep_days:
+        raise SystemExit("prune requires --keep-days or retention_days in --config")
+    result = prune_db(db, keep_days=keep_days)
+    if args.json:
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+    else:
+        print(f"deleted {result['deleted']} entries older than {result['cutoff']} ({result['remaining']} remaining)")
     return 0
 
 
@@ -142,20 +167,28 @@ def build_parser() -> argparse.ArgumentParser:
     exporter.set_defaults(func=cmd_export_prometheus)
 
     alert = sub.add_parser("alert", help="emit or send webhook alerts based on current signals")
-    alert.add_argument("--db", required=True, help="SQLite database path")
+    alert.add_argument("--db", help="SQLite database path")
+    alert.add_argument("--config", help="llm-meter YAML config path")
     alert.add_argument("--webhook-url", help="POST JSON payload to this webhook URL")
     alert.add_argument("--dry-run", action="store_true", help="do not send webhook, only print payload")
     alert.add_argument("--include-ok", action="store_true", help="send/print even when there are no signals")
     alert.add_argument("--exit-code", action="store_true", help="exit with 1 when signals are present")
     alert.add_argument("--text", action="store_true", help="print human-readable text instead of JSON")
-    alert.add_argument("--top", type=int, default=10, help="top N IPs in payload")
-    alert.add_argument("--timeout", type=float, default=10.0, help="webhook timeout seconds")
+    alert.add_argument("--top", type=int, help="top N IPs in payload")
+    alert.add_argument("--timeout", type=float, help="webhook timeout seconds")
     alert.set_defaults(func=cmd_alert)
 
     html = sub.add_parser("export-html", help="export a static HTML dashboard report")
     html.add_argument("--db", required=True, help="SQLite database path")
     html.add_argument("--output", required=True, help="output HTML file")
     html.set_defaults(func=cmd_export_html)
+
+    prune = sub.add_parser("prune", help="delete old SQLite entries by retention window")
+    prune.add_argument("--db", help="SQLite database path")
+    prune.add_argument("--config", help="llm-meter YAML config path")
+    prune.add_argument("--keep-days", type=int, help="keep entries newer than this many days")
+    prune.add_argument("--json", action="store_true", help="emit JSON")
+    prune.set_defaults(func=cmd_prune)
 
     return parser
 

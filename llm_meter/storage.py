@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import Counter
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import sqlite3
 from typing import Iterable
@@ -152,3 +153,27 @@ def hourly_counts(db_path: str | Path) -> list[dict]:
     ).fetchall()
     conn.close()
     return [dict(row) for row in rows]
+
+
+def prune_db(db_path: str | Path, keep_days: int, now: str | datetime | None = None) -> dict:
+    if keep_days <= 0:
+        raise ValueError("keep_days must be greater than 0")
+    current = _parse_now(now)
+    cutoff = current - timedelta(days=keep_days)
+    cutoff_text = cutoff.isoformat()
+    conn = connect(db_path)
+    with conn:
+        cursor = conn.execute("DELETE FROM entries WHERE ts IS NOT NULL AND ts < ?", (cutoff_text,))
+    deleted = cursor.rowcount if cursor.rowcount is not None else 0
+    remaining = conn.execute("SELECT COUNT(*) FROM entries").fetchone()[0]
+    conn.close()
+    return {"deleted": deleted, "remaining": remaining, "cutoff": cutoff_text}
+
+
+def _parse_now(value: str | datetime | None) -> datetime:
+    if value is None:
+        return datetime.now(timezone.utc)
+    if isinstance(value, datetime):
+        return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
+    parsed = datetime.fromisoformat(value)
+    return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)

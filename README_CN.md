@@ -41,6 +41,8 @@ LLM Meter 从最可靠也最容易拿到的数据开始：访问日志。
 - 内置 Web Dashboard。
 - Prometheus `/metrics` exporter。
 - Webhook / cron 告警。
+- YAML 配置文件，适合长期部署。
+- SQLite 数据保留清理，避免小 VPS 磁盘被历史日志撑爆。
 - Docker、Docker Compose、systemd 示例。
 - 默认安全思路：只记录短 auth prefix，不记录完整 API key。
 
@@ -93,6 +95,29 @@ curl http://127.0.0.1:9108/metrics
 python3 -m llm_meter alert --db llm-meter.db --text
 python3 -m llm_meter alert --db llm-meter.db --webhook-url https://example.com/webhook
 ```
+
+使用配置文件和自定义告警规则：
+
+```yaml
+database: /var/lib/llm-meter/llm-meter.db
+retention_days: 30
+
+alert:
+  webhook_url: https://example.com/webhook
+  include_ok: false
+  rules:
+    max_4xx_rate: 0.30
+    max_5xx_rate: 0.05
+    max_latency_seconds: 30
+    max_requests_per_ip: 1000
+```
+
+```bash
+python3 -m llm_meter alert --config examples/llm-meter.yml --text
+python3 -m llm_meter prune --config examples/llm-meter.yml
+```
+
+当前规则覆盖：4xx 比例、5xx 比例、最大延迟、单 IP 请求量。示例见 [examples/llm-meter.yml](examples/llm-meter.yml)。
 
 导出静态 HTML 报告：
 
@@ -177,6 +202,9 @@ deploy/systemd/
 - [x] LiteLLM / OneAPI / NewAPI 网关预设
 - [x] Docker Compose 示例
 - [x] 静态 HTML 报告导出
+- [x] YAML 配置文件
+- [x] 自定义告警规则
+- [x] SQLite 数据保留清理
 - [ ] PyPI / Homebrew 发布
 - [ ] 更完整的 Dashboard 图表
 

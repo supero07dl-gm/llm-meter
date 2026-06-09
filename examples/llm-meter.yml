@@ -1,0 +1,18 @@
+# Example llm-meter config for long-running VPS deployments.
+database: /var/lib/llm-meter/llm-meter.db
+retention_days: 30
+
+alert:
+  webhook_url: https://example.com/webhook
+  include_ok: false
+  top: 10
+  timeout: 10
+  rules:
+    # Warn if more than 30% of recent stored requests are 4xx.
+    max_4xx_rate: 0.30
+    # Warn if more than 5% of recent stored requests are 5xx.
+    max_5xx_rate: 0.05
+    # Warn if any request is slower than 30 seconds.
+    max_latency_seconds: 30
+    # Warn if any single IP appears more than this many times.
+    max_requests_per_ip: 1000

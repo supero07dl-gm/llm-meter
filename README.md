@@ -19,7 +19,7 @@ LLM Meter turns plain access logs from Nginx / Cloudflare / self-hosted AI gatew
 
 It is designed for people running OpenAI-compatible API endpoints through tools like CLIProxyAPI, OneAPI/NewAPI, LiteLLM, LocalAI, Ollama-compatible gateways, or custom reverse proxies.
 
-> MVP status: CLI log analyzer. Web dashboard, Prometheus exporter, and alerting are on the roadmap.
+> MVP status: CLI log analyzer plus SQLite history, dashboard, Prometheus exporter, webhook alerts, config files, and retention pruning.
 
 ## Why
 
@@ -43,7 +43,8 @@ LLM Meter starts with the boring, reliable source of truth: your gateway access 
   - slow upstream responses
 - Output human-readable text or JSON.
 - Works locally, in Docker, or in CI.
-- No database required for the first version.
+- YAML config for long-running deployments.
+- Database retention pruning for small VPS disks.
 - Safe-by-default examples: log short auth prefixes, never full API keys.
 
 ## Quick start
@@ -77,6 +78,7 @@ python3 -m llm_meter report --db llm-meter.db
 python3 -m llm_meter report --db llm-meter.db --json
 python3 -m llm_meter serve --db llm-meter.db --host 127.0.0.1 --port 8765
 python3 -m llm_meter export-prometheus --db llm-meter.db --host 127.0.0.1 --port 9108
+python3 -m llm_meter prune --db llm-meter.db --keep-days 30
 ```
 
 Analyze only recent lines:
@@ -193,6 +195,34 @@ Useful cron pattern:
 
 Use `--include-ok` for heartbeat-style notifications, and `--exit-code` if your scheduler should treat signals as a non-zero result.
 
+## Config file and alert rules
+
+For long-running deployments, put shared settings and alert thresholds in a small YAML file:
+
+```yaml
+database: /var/lib/llm-meter/llm-meter.db
+retention_days: 30
+
+alert:
+  webhook_url: https://example.com/webhook
+  include_ok: false
+  top: 10
+  rules:
+    max_4xx_rate: 0.30
+    max_5xx_rate: 0.05
+    max_latency_seconds: 30
+    max_requests_per_ip: 1000
+```
+
+Then run:
+
+```bash
+python3 -m llm_meter alert --config examples/llm-meter.yml --text
+python3 -m llm_meter prune --config examples/llm-meter.yml
+```
+
+Rules are intentionally simple and dependency-free: high 4xx/5xx rates, slow requests, and high request volume from a single IP. See [examples/llm-meter.yml](examples/llm-meter.yml).
+
 ## Nginx setup
 
 LLM Meter works with common Nginx combined logs, but a custom format gives better analytics:
@@ -239,6 +269,9 @@ Gateway presets:
 - [x] LiteLLM / OneAPI / NewAPI specific presets
 - [x] Docker Compose example
 - [x] Static HTML report export
+- [x] YAML config file
+- [x] Configurable alert rules
+- [x] SQLite retention pruning
 - [ ] Homebrew / PyPI package
 - [ ] Richer dashboard charts
 

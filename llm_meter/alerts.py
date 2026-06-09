@@ -7,9 +7,10 @@ from urllib import request
 from .storage import report_from_db
 
 
-def build_alert_payload(db_path: str | Path, top: int = 10) -> dict:
+def build_alert_payload(db_path: str | Path, top: int = 10, rules: dict | None = None) -> dict:
     report = report_from_db(db_path)
     signals = report.signals()
+    signals.extend(_rule_signals(report, rules or {}))
     return {
         "tool": "llm-meter",
         "parsed_lines": report.parsed,
@@ -20,6 +21,67 @@ def build_alert_payload(db_path: str | Path, top: int = 10) -> dict:
         "statuses": {str(k): v for k, v in report.statuses.most_common()},
         "latency": report.latency_summary(),
     }
+
+
+def _rule_signals(report, rules: dict) -> list[dict]:
+    signals: list[dict] = []
+    if not report.parsed:
+        return signals
+
+    max_4xx_rate = rules.get("max_4xx_rate")
+    if max_4xx_rate is not None:
+        count = sum(v for k, v in report.statuses.items() if 400 <= k <= 499)
+        rate = count / report.parsed
+        if rate > float(max_4xx_rate):
+            signals.append({
+                "level": "warn",
+                "kind": "high_4xx_rate",
+                "message": f"4xx rate {rate:.1%} exceeds threshold {float(max_4xx_rate):.1%}",
+                "count": count,
+                "rate": round(rate, 4),
+                "threshold": float(max_4xx_rate),
+            })
+
+    max_5xx_rate = rules.get("max_5xx_rate")
+    if max_5xx_rate is not None:
+        count = sum(v for k, v in report.statuses.items() if 500 <= k <= 599)
+        rate = count / report.parsed
+        if rate > float(max_5xx_rate):
+            signals.append({
+                "level": "warn",
+                "kind": "high_5xx_rate",
+                "message": f"5xx rate {rate:.1%} exceeds threshold {float(max_5xx_rate):.1%}",
+                "count": count,
+                "rate": round(rate, 4),
+                "threshold": float(max_5xx_rate),
+            })
+
+    max_latency_seconds = rules.get("max_latency_seconds")
+    max_request_time = max(report.request_times) if report.request_times else None
+    if max_latency_seconds is not None and max_request_time is not None and max_request_time > float(max_latency_seconds):
+        signals.append({
+            "level": "warn",
+            "kind": "high_latency",
+            "message": f"max request latency {max_request_time:.2f}s exceeds threshold {float(max_latency_seconds):.2f}s",
+            "seconds": round(max_request_time, 4),
+            "threshold": float(max_latency_seconds),
+        })
+
+    max_requests_per_ip = rules.get("max_requests_per_ip")
+    if max_requests_per_ip is not None:
+        threshold = int(max_requests_per_ip)
+        for ip, count in report.ips.most_common(10):
+            if count > threshold:
+                signals.append({
+                    "level": "warn",
+                    "kind": "high_ip_volume",
+                    "message": f"{ip} made {count} requests, above threshold {threshold}",
+                    "ip": ip,
+                    "count": count,
+                    "threshold": threshold,
+                })
+
+    return signals
 
 
 def format_alert_text(payload: dict) -> str:
