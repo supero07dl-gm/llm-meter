@@ -273,9 +273,12 @@ alert:
 Then run:
 
 ```bash
+python3 -m llm_meter validate-config --config examples/llm-meter.yml
 python3 -m llm_meter alert --config examples/llm-meter.yml --text
 python3 -m llm_meter prune --config examples/llm-meter.yml
 ```
+
+`validate-config` catches missing database paths, invalid retention windows, invalid alert settings, and out-of-range thresholds before you put the config into cron or systemd.
 
 Rules are intentionally simple and dependency-free: high 4xx/5xx rates, slow requests, high request volume from a single IP, total cost budget, total token budget, and per-model cost budget. See [examples/llm-meter.yml](examples/llm-meter.yml).
 
@@ -335,6 +338,7 @@ Gateway presets:
 - [x] Deployment doctor diagnostics
 - [x] Markdown report export
 - [x] Shareable report bundle export
+- [x] Config validation command
 - [ ] Homebrew / PyPI package
 - [ ] Richer dashboard charts
 

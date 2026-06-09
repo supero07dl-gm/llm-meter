@@ -118,9 +118,12 @@ alert:
 ```
 
 ```bash
+python3 -m llm_meter validate-config --config examples/llm-meter.yml
 python3 -m llm_meter alert --config examples/llm-meter.yml --text
 python3 -m llm_meter prune --config examples/llm-meter.yml
 ```
+
+`validate-config` 会在接入 cron / systemd 前检查配置：database 是否缺失、retention_days 是否有效、alert 参数和阈值是否越界。
 
 当前规则覆盖：4xx 比例、5xx 比例、最大延迟、单 IP 请求量、总成本预算、总 token 预算、单模型成本预算。示例见 [examples/llm-meter.yml](examples/llm-meter.yml)。
 
@@ -268,6 +271,7 @@ deploy/systemd/
 - [x] 部署 doctor 诊断命令
 - [x] Markdown 报告导出
 - [x] 可分享 report bundle 导出
+- [x] 配置校验命令
 - [ ] PyPI / Homebrew 发布
 - [ ] 更完整的 Dashboard 图表
 

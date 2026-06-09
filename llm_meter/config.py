@@ -56,11 +56,13 @@ class AlertConfig:
     @classmethod
     def from_dict(cls, data: dict[str, Any] | None) -> "AlertConfig":
         data = data or {}
+        top = _optional_int(data.get("top"))
+        timeout = _optional_float(data.get("timeout"))
         return cls(
             webhook_url=_optional_str(data.get("webhook_url")),
             include_ok=bool(data.get("include_ok", False)),
-            top=_optional_int(data.get("top")) or 10,
-            timeout=_optional_float(data.get("timeout")) or 10.0,
+            top=10 if top is None else top,
+            timeout=10.0 if timeout is None else timeout,
             rules=AlertRules.from_dict(data.get("rules") if isinstance(data.get("rules"), dict) else {}),
         )
 
@@ -85,6 +87,91 @@ def load_config(path: str | Path | None) -> Config:
         return Config()
     text = Path(path).read_text(encoding="utf-8")
     return Config.from_dict(_parse_simple_yaml(text))
+
+
+def validate_config(path: str | Path) -> dict[str, Any]:
+    """Validate a llm-meter YAML config for long-running deployments."""
+    checks: list[dict[str, str]] = []
+    config_path = Path(path)
+
+    def ok(message: str, **extra: Any) -> None:
+        check: dict[str, Any] = {"status": "ok", "message": message}
+        check.update(extra)
+        checks.append(check)
+
+    def fail(message: str, **extra: Any) -> None:
+        check: dict[str, Any] = {"status": "fail", "message": message}
+        check.update(extra)
+        checks.append(check)
+
+    try:
+        config = load_config(config_path)
+    except Exception as exc:  # noqa: BLE001 - CLI validation should report parse errors cleanly.
+        fail("config parse failed", error=str(exc))
+        return {"ok": False, "path": str(config_path), "checks": checks}
+
+    ok("config parsed")
+
+    if config.database:
+        ok("database configured", value=config.database)
+    else:
+        fail("database is not set")
+
+    if config.retention_days is None:
+        ok("retention_days not set")
+    elif config.retention_days > 0:
+        ok("retention_days valid", value=str(config.retention_days))
+    else:
+        fail("retention_days must be greater than 0")
+
+    if config.alert.top > 0:
+        ok("alert.top valid", value=str(config.alert.top))
+    else:
+        fail("alert.top must be greater than 0")
+
+    if config.alert.timeout > 0:
+        ok("alert.timeout valid", value=str(config.alert.timeout))
+    else:
+        fail("alert.timeout must be greater than 0")
+
+    rules = config.alert.rules
+    for name in ("max_4xx_rate", "max_5xx_rate"):
+        value = getattr(rules, name)
+        if value is None:
+            continue
+        if 0 <= value <= 1:
+            ok(f"alert.rules.{name} valid", value=str(value))
+        else:
+            fail(f"alert.rules.{name} must be between 0 and 1")
+
+    for name in (
+        "max_latency_seconds",
+        "max_requests_per_ip",
+        "max_total_cost_usd",
+        "max_total_tokens",
+        "max_model_cost_usd",
+    ):
+        value = getattr(rules, name)
+        if value is None:
+            continue
+        if value > 0:
+            ok(f"alert.rules.{name} valid", value=str(value))
+        else:
+            fail(f"alert.rules.{name} must be greater than 0")
+
+    return {"ok": not any(check["status"] == "fail" for check in checks), "path": str(config_path), "checks": checks}
+
+
+def format_validation_text(result: dict[str, Any]) -> str:
+    lines = ["LLM Meter config validation", f"path: {result['path']}"]
+    for check in result["checks"]:
+        prefix = "OK" if check["status"] == "ok" else "FAIL"
+        detail = f" ({check['value']})" if "value" in check else ""
+        if "error" in check:
+            detail = f" ({check['error']})"
+        lines.append(f"{prefix} {check['message']}{detail}")
+    lines.append(f"result: {'ok' if result['ok'] else 'failed'}")
+    return "\n".join(lines)
 
 
 def _parse_simple_yaml(text: str) -> dict[str, Any]:

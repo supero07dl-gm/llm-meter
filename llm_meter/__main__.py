@@ -9,7 +9,7 @@ from . import __version__
 from .alerts import build_alert_payload, format_alert_text, send_webhook, should_alert
 from .analyzer import analyze_lines, format_text
 from .bundle import export_bundle
-from .config import load_config
+from .config import format_validation_text, load_config, validate_config
 from .dashboard import render_dashboard, serve_dashboard
 from .demo import create_demo
 from .doctor import format_doctor_text, run_doctor
@@ -162,6 +162,15 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     return 0 if result["ok"] else 1
 
 
+def cmd_validate_config(args: argparse.Namespace) -> int:
+    result = validate_config(args.config)
+    if args.json:
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+    else:
+        print(format_validation_text(result))
+    return 0 if result["ok"] else 1
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="llm-meter",
@@ -256,6 +265,11 @@ def build_parser() -> argparse.ArgumentParser:
     doctor.add_argument("--log", help="gateway log path to sample")
     doctor.add_argument("--json", action="store_true", help="emit JSON")
     doctor.set_defaults(func=cmd_doctor)
+
+    validate = sub.add_parser("validate-config", help="validate llm-meter YAML config values")
+    validate.add_argument("--config", required=True, help="llm-meter YAML config path")
+    validate.add_argument("--json", action="store_true", help="emit JSON")
+    validate.set_defaults(func=cmd_validate_config)
 
     return parser
 
