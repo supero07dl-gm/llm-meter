@@ -1,0 +1,44 @@
+<svg width="1280" height="640" viewBox="0 0 1280 640" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1280" y2="640" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#07111F"/>
+      <stop offset="0.48" stop-color="#101827"/>
+      <stop offset="1" stop-color="#06251F"/>
+    </linearGradient>
+    <linearGradient id="line" x1="180" y1="120" x2="1100" y2="520" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#38BDF8"/>
+      <stop offset="0.5" stop-color="#A78BFA"/>
+      <stop offset="1" stop-color="#34D399"/>
+    </linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="14" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.2 0 0 0 0 0.8 0 0 0 0 1 0 0 0 0.55 0"/>
+      <feBlend in="SourceGraphic"/>
+    </filter>
+  </defs>
+  <rect width="1280" height="640" rx="36" fill="url(#bg)"/>
+  <g opacity="0.14">
+    <path d="M0 118H1280M0 220H1280M0 322H1280M0 424H1280M0 526H1280" stroke="#94A3B8"/>
+    <path d="M158 0V640M316 0V640M474 0V640M632 0V640M790 0V640M948 0V640M1106 0V640" stroke="#94A3B8"/>
+  </g>
+  <path d="M165 435C230 310 295 350 360 280C425 210 490 255 555 225C620 195 685 120 750 175C815 230 880 405 945 350C1010 295 1075 210 1140 230" stroke="url(#line)" stroke-width="10" stroke-linecap="round" filter="url(#glow)"/>
+  <g opacity="0.92">
+    <rect x="780" y="290" width="328" height="170" rx="22" fill="#0F172A" stroke="#334155"/>
+    <text x="812" y="338" fill="#E2E8F0" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="24">Top IPs</text>
+    <rect x="812" y="365" width="220" height="14" rx="7" fill="#38BDF8"/>
+    <rect x="812" y="399" width="154" height="14" rx="7" fill="#A78BFA"/>
+    <rect x="812" y="433" width="95" height="14" rx="7" fill="#34D399"/>
+  </g>
+  <g opacity="0.92">
+    <rect x="170" y="180" width="340" height="190" rx="22" fill="#0F172A" stroke="#334155"/>
+    <circle cx="222" cy="238" r="20" fill="#22C55E"/>
+    <circle cx="222" cy="292" r="20" fill="#F59E0B"/>
+    <circle cx="222" cy="346" r="20" fill="#EF4444"/>
+    <text x="262" y="247" fill="#E2E8F0" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="22">2xx requests</text>
+    <text x="262" y="301" fill="#E2E8F0" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="22">429 signals</text>
+    <text x="262" y="355" fill="#E2E8F0" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="22">5xx errors</text>
+  </g>
+  <text x="640" y="120" text-anchor="middle" fill="#F8FAFC" font-family="Inter, ui-sans-serif, system-ui" font-size="72" font-weight="800">LLM Meter</text>
+  <text x="640" y="170" text-anchor="middle" fill="#CBD5E1" font-family="Inter, ui-sans-serif, system-ui" font-size="28">Usage analytics for OpenAI-compatible API gateways</text>
+  <text x="640" y="550" text-anchor="middle" fill="#94A3B8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="24">nginx logs → traffic report → abuse signals</text>
+</svg>

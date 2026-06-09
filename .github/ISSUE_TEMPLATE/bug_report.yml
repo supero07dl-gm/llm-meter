@@ -1,0 +1,28 @@
+name: Bug report
+description: Report a parser, CLI, or packaging problem
+title: "Bug: "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe the bug and expected behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: sample
+    attributes:
+      label: Sanitized log sample
+      description: Paste a few redacted lines. Never include full API keys.
+      render: text
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      placeholder: v0.1.0
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: OS, Python version, Docker version, gateway type

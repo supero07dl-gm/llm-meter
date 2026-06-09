@@ -1,0 +1,7 @@
+services:
+  llm-meter:
+    build: .
+    image: llm-meter:local
+    volumes:
+      - /var/log/nginx:/logs:ro
+    command: ["analyze", "/logs/llm-gateway-access.log"]
