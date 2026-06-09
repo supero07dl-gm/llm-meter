@@ -159,6 +159,28 @@ scrape_configs:
 
 High-cardinality metrics like IPs and paths are capped with `--top`.
 
+## Alerts and webhooks
+
+Print current abuse/health signals:
+
+```bash
+python3 -m llm_meter alert --db llm-meter.db --text
+```
+
+Send JSON to a webhook only when signals are present:
+
+```bash
+python3 -m llm_meter alert --db llm-meter.db --webhook-url https://example.com/webhook
+```
+
+Useful cron pattern:
+
+```bash
+*/5 * * * * llm-meter alert --db /var/lib/llm-meter/llm-meter.db --webhook-url https://example.com/webhook
+```
+
+Use `--include-ok` for heartbeat-style notifications, and `--exit-code` if your scheduler should treat signals as a non-zero result.
+
 ## Nginx setup
 
 LLM Meter works with common Nginx combined logs, but a custom format gives better analytics:
@@ -200,7 +222,7 @@ Gateway presets:
 - [x] SQLite storage for historical trends
 - [x] Web dashboard
 - [x] Prometheus exporter
-- [ ] Telegram / Discord / webhook alerts
+- [x] Telegram / Discord / webhook alerts
 - [x] Cloudflare Logpush parser
 - [x] LiteLLM / OneAPI / NewAPI specific presets
 - [x] Docker Compose example

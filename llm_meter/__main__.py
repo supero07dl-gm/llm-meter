@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 
 from . import __version__
+from .alerts import build_alert_payload, format_alert_text, send_webhook, should_alert
 from .analyzer import analyze_lines, format_text
 from .dashboard import serve_dashboard
 from .prometheus import serve_prometheus
@@ -70,6 +71,24 @@ def cmd_export_prometheus(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_alert(args: argparse.Namespace) -> int:
+    payload = build_alert_payload(args.db, top=args.top)
+    if args.text:
+        body = format_alert_text(payload)
+        print(body)
+    else:
+        print(json.dumps(payload, indent=2, ensure_ascii=False))
+
+    if not should_alert(payload, include_ok=args.include_ok):
+        return 0
+    if args.webhook_url and not args.dry_run:
+        status, response_body = send_webhook(args.webhook_url, payload, timeout=args.timeout)
+        print(f"webhook_status={status}")
+        if response_body:
+            print(response_body[:500])
+    return 1 if payload.get("signals") and args.exit_code else 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="llm-meter",
@@ -114,6 +133,17 @@ def build_parser() -> argparse.ArgumentParser:
     exporter.add_argument("--port", type=int, default=9108, help="listen port")
     exporter.add_argument("--top", type=int, default=50, help="top N label values for high-cardinality metrics")
     exporter.set_defaults(func=cmd_export_prometheus)
+
+    alert = sub.add_parser("alert", help="emit or send webhook alerts based on current signals")
+    alert.add_argument("--db", required=True, help="SQLite database path")
+    alert.add_argument("--webhook-url", help="POST JSON payload to this webhook URL")
+    alert.add_argument("--dry-run", action="store_true", help="do not send webhook, only print payload")
+    alert.add_argument("--include-ok", action="store_true", help="send/print even when there are no signals")
+    alert.add_argument("--exit-code", action="store_true", help="exit with 1 when signals are present")
+    alert.add_argument("--text", action="store_true", help="print human-readable text instead of JSON")
+    alert.add_argument("--top", type=int, default=10, help="top N IPs in payload")
+    alert.add_argument("--timeout", type=float, default=10.0, help="webhook timeout seconds")
+    alert.set_defaults(func=cmd_alert)
 
     return parser
 
