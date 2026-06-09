@@ -1,0 +1,3 @@
+203.0.113.10 realip=172.71.1.1 cf=203.0.113.10 host=yukig.de5.net auth_prefix=sk-live- [09/Jun/2026:02:00:01 +0000] "POST /v1/chat/completions HTTP/2.0" 200 1234 rt=1.234 uct=0.001 urt=1.230 "-" "curl/8"
+203.0.113.10 realip=172.71.1.1 cf=203.0.113.10 host=yukig.de5.net auth_prefix=sk-live- [09/Jun/2026:02:00:02 +0000] "POST /v1/chat/completions HTTP/2.0" 429 92 rt=0.010 uct=0.001 urt=0.009 "-" "curl/8"
+198.51.100.23 realip=172.71.2.2 cf=198.51.100.23 host=tarai05.ccwu.cc auth_prefix=- [09/Jun/2026:02:00:03 +0000] "GET /v1/models HTTP/2.0" 401 27 rt=0.004 uct=0.001 urt=0.003 "-" "curl/8"
