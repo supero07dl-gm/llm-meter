@@ -66,6 +66,14 @@ JSON output:
 python3 -m llm_meter analyze /var/log/nginx/llm-gateway-access.log --json
 ```
 
+Persist to SQLite and report historical trends:
+
+```bash
+python3 -m llm_meter ingest /var/log/nginx/llm-gateway-access.log --db llm-meter.db
+python3 -m llm_meter report --db llm-meter.db
+python3 -m llm_meter report --db llm-meter.db --json
+```
+
 Analyze only recent lines:
 
 ```bash
@@ -151,7 +159,7 @@ Full example: [docs/nginx.md](docs/nginx.md)
 
 ## Roadmap
 
-- [ ] SQLite storage for historical trends
+- [x] SQLite storage for historical trends
 - [ ] Web dashboard
 - [ ] Prometheus exporter
 - [ ] Telegram / Discord / webhook alerts
