@@ -272,6 +272,7 @@ deploy/systemd/
 
 - [x] SQLite 历史存储
 - [x] Web Dashboard
+- [x] SVG 小时趋势图表
 - [x] Prometheus exporter
 - [x] Webhook 告警
 - [x] Cloudflare Logpush parser
@@ -293,7 +294,7 @@ deploy/systemd/
 - [x] CSV 原始记录导出
 - [x] 配置校验命令
 - [ ] PyPI / Homebrew 发布
-- [ ] 更完整的 Dashboard 图表
+- [ ] Dashboard 筛选与下钻
 
 ## 致谢 / 借鉴
 

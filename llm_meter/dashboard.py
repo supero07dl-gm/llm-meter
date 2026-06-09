@@ -26,6 +26,15 @@ table { width: 100%; border-collapse: collapse; font-size: 14px; }
 th, td { text-align: left; padding: 9px 6px; border-bottom: 1px solid #1e293b; }
 th { color: #94a3b8; font-weight: 600; }
 .bar { display: inline-block; height: 9px; border-radius: 999px; background: linear-gradient(90deg, #38bdf8, #34d399); min-width: 4px; }
+.chart-wrap { overflow-x: auto; }
+.chart { width: 100%; min-width: 680px; height: 220px; }
+.chart text { fill: #94a3b8; font-size: 11px; }
+.chart .grid-line { stroke: #1e293b; stroke-width: 1; }
+.chart .ok { fill: #34d399; }
+.chart .client_errors { fill: #f59e0b; }
+.chart .server_errors { fill: #ef4444; }
+.legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 10px; color: #94a3b8; font-size: 13px; }
+.dot { display: inline-block; width: 10px; height: 10px; border-radius: 99px; margin-right: 6px; }
 .signal { padding: 10px 12px; border-radius: 12px; margin: 8px 0; background: rgba(56,189,248,.10); border: 1px solid rgba(56,189,248,.24); }
 .warn { background: rgba(245,158,11,.12); border-color: rgba(245,158,11,.30); }
 .err { background: rgba(239,68,68,.12); border-color: rgba(239,68,68,.30); }
@@ -129,6 +138,11 @@ def render_dashboard(db_path: str | Path) -> str:
   </section>
 
   <section class="card" style="margin-top:14px">
+    <div class="label">Hourly chart</div>
+    {hourly_chart(hourly)}
+  </section>
+
+  <section class="card" style="margin-top:14px">
     <div class="label">Hourly trend</div>
     {hourly_table(hourly)}
   </section>
@@ -182,6 +196,65 @@ def hourly_table(rows: list[dict]) -> str:
             f"<tr><td>{esc(row['hour'])}:00</td><td>{row['requests']}</td><td>{row['ok']}</td><td>{row['client_errors']}</td><td>{row['server_errors']}</td></tr>"
         )
     return f"<table>{''.join(html_rows)}</table>"
+
+
+def hourly_chart(rows: list[dict]) -> str:
+    if not rows:
+        return "<p class='sub'>No timestamped rows.</p>"
+
+    width = 760
+    height = 220
+    padding_left = 42
+    padding_right = 18
+    padding_top = 18
+    padding_bottom = 42
+    plot_width = width - padding_left - padding_right
+    plot_height = height - padding_top - padding_bottom
+    max_total = max(int(row.get("requests") or 0) for row in rows) or 1
+    slot = plot_width / max(len(rows), 1)
+    bar_width = max(8, min(26, slot * 0.62))
+
+    grid = []
+    for fraction in (0, 0.25, 0.5, 0.75, 1):
+        y = padding_top + plot_height - plot_height * fraction
+        value = round(max_total * fraction)
+        grid.append(
+            f"<line class='grid-line' x1='{padding_left}' y1='{y:.1f}' x2='{width - padding_right}' y2='{y:.1f}' />"
+            f"<text x='8' y='{y + 4:.1f}'>{value}</text>"
+        )
+
+    bars = []
+    for index, row in enumerate(rows):
+        x = padding_left + index * slot + (slot - bar_width) / 2
+        y_base = padding_top + plot_height
+        parts = [
+            ("server_errors", int(row.get("server_errors") or 0)),
+            ("client_errors", int(row.get("client_errors") or 0)),
+            ("ok", int(row.get("ok") or 0)),
+        ]
+        current_y = y_base
+        for class_name, value in parts:
+            if value <= 0:
+                continue
+            segment_height = max(1, plot_height * value / max_total)
+            current_y -= segment_height
+            bars.append(
+                f"<rect class='{class_name}' x='{x:.1f}' y='{current_y:.1f}' width='{bar_width:.1f}' height='{segment_height:.1f}'>"
+                f"<title>{esc(row.get('hour'))}:00 {class_name}={value}</title></rect>"
+            )
+        if index == 0 or index == len(rows) - 1 or index % max(1, len(rows) // 6) == 0:
+            label = esc(str(row.get("hour", ""))[-5:] or str(index))
+            bars.append(f"<text x='{x - 8:.1f}' y='{height - 18}'>{label}</text>")
+
+    legend = (
+        "<div class='legend'>"
+        "<span><span class='dot' style='background:#34d399'></span>ok</span>"
+        "<span><span class='dot' style='background:#f59e0b'></span>client_errors</span>"
+        "<span><span class='dot' style='background:#ef4444'></span>server_errors</span>"
+        "</div>"
+    )
+    svg = f"<div class='chart-wrap'><svg class='chart' viewBox='0 0 {width} {height}' role='img' aria-label='Hourly request chart'>{''.join(grid)}{''.join(bars)}</svg></div>"
+    return svg + legend
 
 
 def signals(items: list[dict]) -> str:

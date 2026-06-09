@@ -15,3 +15,6 @@ def test_render_dashboard_contains_metrics(tmp_path):
     assert "203.0.113.10" in html
     assert "/api/report" in html
     assert "Hourly trend" in html
+    assert "Hourly chart" in html
+    assert "<svg" in html
+    assert "client_errors" in html

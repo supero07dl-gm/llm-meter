@@ -339,6 +339,7 @@ Gateway presets:
 
 - [x] SQLite storage for historical trends
 - [x] Web dashboard
+- [x] SVG hourly dashboard chart
 - [x] Prometheus exporter
 - [x] Telegram / Discord / webhook alerts
 - [x] Cloudflare Logpush parser
@@ -360,7 +361,7 @@ Gateway presets:
 - [x] CSV raw entry export
 - [x] Config validation command
 - [ ] Homebrew / PyPI package
-- [ ] Richer dashboard charts
+- [ ] Dashboard filters and drill-downs
 
 ## Inspirations
 
