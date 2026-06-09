@@ -199,6 +199,7 @@ Export a shareable dashboard report as a single HTML file:
 
 ```bash
 python3 -m llm_meter export-html --db llm-meter.db --output report.html
+python3 -m llm_meter export-html --db llm-meter.db --output recent.html --limit 1000
 ```
 
 Export a Markdown report for incident notes, GitHub issues, runbooks, or chat handoff:
@@ -340,6 +341,7 @@ Gateway presets:
 - [x] SQLite storage for historical trends
 - [x] Web dashboard
 - [x] SVG hourly dashboard chart
+- [x] Recent-window dashboard/export filtering
 - [x] Prometheus exporter
 - [x] Telegram / Discord / webhook alerts
 - [x] Cloudflare Logpush parser

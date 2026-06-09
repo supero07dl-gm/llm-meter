@@ -4,7 +4,7 @@ import html
 import json
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
 from .storage import hourly_counts, report_from_db
 
@@ -52,14 +52,15 @@ def serve_dashboard(db_path: str | Path, host: str = "127.0.0.1", port: int = 87
             if parsed.path == "/healthz":
                 self._send(200, "ok", "text/plain; charset=utf-8")
                 return
+            limit = _limit_from_query(parsed.query)
             if parsed.path == "/api/report":
-                payload = _payload(db_path)
+                payload = _payload(db_path, limit=limit)
                 self._send(200, json.dumps(payload, ensure_ascii=False, indent=2), "application/json; charset=utf-8")
                 return
             if parsed.path not in ("/", "/index.html"):
                 self._send(404, "not found", "text/plain; charset=utf-8")
                 return
-            self._send(200, render_dashboard(db_path), "text/html; charset=utf-8")
+            self._send(200, render_dashboard(db_path, limit=limit), "text/html; charset=utf-8")
 
         def log_message(self, fmt, *args):  # noqa: A003 - stdlib API
             return
@@ -77,19 +78,33 @@ def serve_dashboard(db_path: str | Path, host: str = "127.0.0.1", port: int = 87
     server.serve_forever()
 
 
-def _payload(db_path: Path) -> dict:
-    report = report_from_db(db_path)
+def _limit_from_query(query: str) -> int | None:
+    values = parse_qs(query).get("limit") or []
+    if not values:
+        return None
+    try:
+        value = int(values[0])
+    except (TypeError, ValueError):
+        return None
+    return value if value > 0 else None
+
+
+def _payload(db_path: Path, limit: int | None = None) -> dict:
+    report = report_from_db(db_path, limit=limit)
     payload = report.to_dict(top=10)
-    payload["hourly"] = hourly_counts(db_path)
+    payload["hourly"] = hourly_counts(db_path, limit=limit)
+    if limit is not None:
+        payload["limit"] = limit
     return payload
 
 
-def render_dashboard(db_path: str | Path) -> str:
-    payload = _payload(Path(db_path))
+def render_dashboard(db_path: str | Path, limit: int | None = None) -> str:
+    payload = _payload(Path(db_path), limit=limit)
     total = payload["parsed_lines"]
     status_classes = payload["status_classes"]
     latency = payload["latency"]
     hourly = payload["hourly"][-24:]
+    scope = f"Recent {limit} entries" if limit is not None else "All entries"
     return f"""<!doctype html>
 <html lang="en">
 <head>
@@ -103,7 +118,7 @@ def render_dashboard(db_path: str | Path) -> str:
   <section class="hero">
     <div>
       <h1>LLM Meter</h1>
-      <div class="sub">OpenAI-compatible API gateway traffic dashboard</div>
+      <div class="sub">OpenAI-compatible API gateway traffic dashboard · {esc(scope)}</div>
     </div>
     <div class="sub">{esc(payload.get('first_seen') or '-')} → {esc(payload.get('last_seen') or '-')}</div>
   </section>

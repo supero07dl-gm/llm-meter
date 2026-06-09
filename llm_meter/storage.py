@@ -165,19 +165,25 @@ def _parse_iso(value: str | None):
         return None
 
 
-def hourly_counts(db_path: str | Path) -> list[dict]:
+def hourly_counts(db_path: str | Path, limit: int | None = None) -> list[dict]:
     conn = connect(db_path)
+    source = "entries"
+    params: tuple[int, ...] = ()
+    if limit is not None:
+        source = "(SELECT * FROM entries ORDER BY id DESC LIMIT ?)"
+        params = (limit,)
     rows = conn.execute(
-        """
+        f"""
         SELECT substr(ts, 1, 13) AS hour, COUNT(*) AS requests,
                SUM(CASE WHEN status BETWEEN 200 AND 299 THEN 1 ELSE 0 END) AS ok,
                SUM(CASE WHEN status BETWEEN 400 AND 499 THEN 1 ELSE 0 END) AS client_errors,
                SUM(CASE WHEN status BETWEEN 500 AND 599 THEN 1 ELSE 0 END) AS server_errors
-        FROM entries
+        FROM {source}
         WHERE ts IS NOT NULL
         GROUP BY hour
         ORDER BY hour
-        """
+        """,
+        params,
     ).fetchall()
     conn.close()
     return [dict(row) for row in rows]

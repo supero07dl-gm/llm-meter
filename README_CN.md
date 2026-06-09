@@ -151,6 +151,7 @@ Token / 成本分析：
 
 ```bash
 python3 -m llm_meter export-html --db llm-meter.db --output report.html
+python3 -m llm_meter export-html --db llm-meter.db --output recent.html --limit 1000
 ```
 
 导出 Markdown 报告，适合 incident note、GitHub issue、runbook 或聊天交接：
@@ -273,6 +274,7 @@ deploy/systemd/
 - [x] SQLite 历史存储
 - [x] Web Dashboard
 - [x] SVG 小时趋势图表
+- [x] Dashboard / HTML 导出 recent-window 过滤
 - [x] Prometheus exporter
 - [x] Webhook 告警
 - [x] Cloudflare Logpush parser

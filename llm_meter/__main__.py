@@ -104,7 +104,7 @@ def cmd_alert(args: argparse.Namespace) -> int:
 
 
 def cmd_export_html(args: argparse.Namespace) -> int:
-    html = render_dashboard(args.db)
+    html = render_dashboard(args.db, limit=args.limit)
     Path(args.output).write_text(html, encoding="utf-8")
     print(f"wrote {args.output}")
     return 0
@@ -242,6 +242,7 @@ def build_parser() -> argparse.ArgumentParser:
     html = sub.add_parser("export-html", help="export a static HTML dashboard report")
     html.add_argument("--db", required=True, help="SQLite database path")
     html.add_argument("--output", required=True, help="output HTML file")
+    html.add_argument("--limit", type=int, help="only report over the newest N ingested entries")
     html.set_defaults(func=cmd_export_html)
 
     markdown = sub.add_parser("export-markdown", help="export a Markdown incident/share report")
