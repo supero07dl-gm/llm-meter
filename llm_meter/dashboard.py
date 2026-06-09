@@ -103,7 +103,14 @@ def render_dashboard(db_path: str | Path) -> str:
     {metric('Requests', total)}
     {metric('2xx', status_classes.get('2xx', 0))}
     {metric('4xx', status_classes.get('4xx', 0))}
+    {metric('Tokens', payload['tokens']['total'])}
+  </section>
+
+  <section class="grid" style="margin-top:14px">
+    {metric('Estimated cost', '$' + str(payload['cost']['total_usd']))}
+    {metric('Models', len(payload['models']))}
     {metric('Max latency', _fmt_seconds(latency['request_time']['max']))}
+    {metric('5xx', status_classes.get('5xx', 0))}
   </section>
 
   <section class="two">
@@ -114,6 +121,11 @@ def render_dashboard(db_path: str | Path) -> str:
   <section class="two">
     {table_card('Statuses', payload['statuses'], total)}
     {table_card('Auth prefixes', payload['top_auth_prefixes'], total)}
+  </section>
+
+  <section class="two">
+    {table_card('Models', payload['models'], total)}
+    {money_table_card('Cost by model', payload['cost']['by_model'])}
   </section>
 
   <section class="card" style="margin-top:14px">
@@ -149,6 +161,15 @@ def table_card(title: str, data: dict, total: int) -> str:
         )
     if not rows:
         rows.append("<tr><td colspan='3'>-</td></tr>")
+    return f"<div class='card'><div class='label'>{esc(title)}</div><table><tbody>{''.join(rows)}</tbody></table></div>"
+
+
+def money_table_card(title: str, data: dict) -> str:
+    rows = []
+    for key, value in data.items():
+        rows.append(f"<tr><td>{esc(key)}</td><td>${float(value):.8f}</td></tr>")
+    if not rows:
+        rows.append("<tr><td colspan='2'>-</td></tr>")
     return f"<div class='card'><div class='label'>{esc(title)}</div><table><tbody>{''.join(rows)}</tbody></table></div>"
 
 

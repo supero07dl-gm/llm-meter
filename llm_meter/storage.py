@@ -30,12 +30,29 @@ CREATE INDEX IF NOT EXISTS idx_entries_status ON entries(status);
 CREATE INDEX IF NOT EXISTS idx_entries_host ON entries(host);
 """
 
+MIGRATIONS = {
+    "model": "ALTER TABLE entries ADD COLUMN model TEXT NOT NULL DEFAULT '-'",
+    "prompt_tokens": "ALTER TABLE entries ADD COLUMN prompt_tokens INTEGER NOT NULL DEFAULT 0",
+    "completion_tokens": "ALTER TABLE entries ADD COLUMN completion_tokens INTEGER NOT NULL DEFAULT 0",
+    "total_tokens": "ALTER TABLE entries ADD COLUMN total_tokens INTEGER NOT NULL DEFAULT 0",
+    "cost_usd": "ALTER TABLE entries ADD COLUMN cost_usd REAL NOT NULL DEFAULT 0",
+}
+
 
 def connect(path: str | Path) -> sqlite3.Connection:
     conn = sqlite3.connect(path)
     conn.row_factory = sqlite3.Row
     conn.executescript(SCHEMA)
+    _migrate(conn)
     return conn
+
+
+def _migrate(conn: sqlite3.Connection) -> None:
+    columns = {row[1] for row in conn.execute("PRAGMA table_info(entries)").fetchall()}
+    with conn:
+        for column, sql in MIGRATIONS.items():
+            if column not in columns:
+                conn.execute(sql)
 
 
 def ingest_lines(lines: Iterable[str], db_path: str | Path, batch_size: int = 1000) -> dict:
@@ -54,8 +71,9 @@ def ingest_lines(lines: Iterable[str], db_path: str | Path, batch_size: int = 10
                 """
                 INSERT INTO entries (
                     ts, ip, host, method, path, status, body_bytes, auth_prefix,
-                    request_time, upstream_response_time, raw
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    request_time, upstream_response_time, model, prompt_tokens,
+                    completion_tokens, total_tokens, cost_usd, raw
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 rows,
             )
@@ -91,6 +109,11 @@ def _entry_to_row(entry: LogEntry) -> tuple:
         entry.auth_prefix,
         entry.request_time,
         entry.upstream_response_time,
+        entry.model,
+        entry.prompt_tokens,
+        entry.completion_tokens,
+        entry.total_tokens,
+        entry.cost_usd,
         entry.raw,
     )
 
@@ -120,6 +143,11 @@ def report_from_db(db_path: str | Path, limit: int | None = None) -> Report:
             auth_prefix=row["auth_prefix"],
             request_time=row["request_time"],
             upstream_response_time=row["upstream_response_time"],
+            model=row["model"],
+            prompt_tokens=row["prompt_tokens"],
+            completion_tokens=row["completion_tokens"],
+            total_tokens=row["total_tokens"],
+            cost_usd=row["cost_usd"],
             raw=row["raw"],
         )
         add_entry(report, entry)

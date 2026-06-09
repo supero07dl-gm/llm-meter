@@ -48,6 +48,11 @@ class LogEntry:
     cf: str = "-"
     request_time: Optional[float] = None
     upstream_response_time: Optional[float] = None
+    model: str = "-"
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
+    total_tokens: int = 0
+    cost_usd: float = 0.0
     raw: str = ""
 
 
@@ -138,6 +143,13 @@ def _parse_json_line(line: str) -> Optional[LogEntry]:
     request_time = _parse_float(str(_first(data, "OriginResponseDurationMs", "RequestTimeMs") or ""))
     if request_time is not None:
         request_time = request_time / 1000
+    usage = data.get("usage") if isinstance(data.get("usage"), dict) else {}
+    prompt_tokens = _parse_int(str(_first(data, "prompt_tokens", "promptTokens") or usage.get("prompt_tokens") or usage.get("input_tokens") or "0"))
+    completion_tokens = _parse_int(str(_first(data, "completion_tokens", "completionTokens") or usage.get("completion_tokens") or usage.get("output_tokens") or "0"))
+    total_tokens = _parse_int(str(_first(data, "total_tokens", "totalTokens") or usage.get("total_tokens") or "0"))
+    if not total_tokens:
+        total_tokens = prompt_tokens + completion_tokens
+    cost_usd = _parse_float(str(_first(data, "cost_usd", "cost", "estimated_cost_usd", "estimatedCostUsd") or "")) or 0.0
 
     return LogEntry(
         ip=ip,
@@ -153,6 +165,11 @@ def _parse_json_line(line: str) -> Optional[LogEntry]:
         body_bytes=body_bytes,
         request_time=request_time,
         upstream_response_time=request_time,
+        model=str(_first(data, "model", "model_name", "modelName") or "-"),
+        prompt_tokens=prompt_tokens,
+        completion_tokens=completion_tokens,
+        total_tokens=total_tokens,
+        cost_usd=cost_usd,
         raw=line,
     )
 

@@ -23,8 +23,14 @@ class Report:
     paths: Counter[str] = field(default_factory=Counter)
     ips: Counter[str] = field(default_factory=Counter)
     auth_prefixes: Counter[str] = field(default_factory=Counter)
+    models: Counter[str] = field(default_factory=Counter)
     request_times: list[float] = field(default_factory=list)
     upstream_times: list[float] = field(default_factory=list)
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
+    total_tokens: int = 0
+    cost_usd: float = 0.0
+    cost_by_model: Counter[str] = field(default_factory=Counter)
 
     def to_dict(self, top: int = 10) -> dict:
         return {
@@ -40,6 +46,16 @@ class Report:
             "paths": dict(self.paths.most_common(top)),
             "top_ips": dict(self.ips.most_common(top)),
             "top_auth_prefixes": dict(self.auth_prefixes.most_common(top)),
+            "models": dict(self.models.most_common(top)),
+            "tokens": {
+                "prompt": self.prompt_tokens,
+                "completion": self.completion_tokens,
+                "total": self.total_tokens,
+            },
+            "cost": {
+                "total_usd": round(self.cost_usd, 8),
+                "by_model": {model: round(cost, 8) for model, cost in self.cost_by_model.most_common(top)},
+            },
             "latency": self.latency_summary(),
             "signals": self.signals(),
         }
@@ -128,6 +144,14 @@ def add_entry(report: Report, entry: LogEntry) -> None:
     report.paths[entry.path.split("?", 1)[0]] += 1
     report.ips[entry.ip] += 1
     report.auth_prefixes[entry.auth_prefix] += 1
+    if entry.model and entry.model != "-":
+        report.models[entry.model] += 1
+    report.prompt_tokens += entry.prompt_tokens
+    report.completion_tokens += entry.completion_tokens
+    report.total_tokens += entry.total_tokens
+    report.cost_usd += entry.cost_usd
+    if entry.model and entry.model != "-" and entry.cost_usd:
+        report.cost_by_model[entry.model] += entry.cost_usd
     if entry.request_time is not None:
         report.request_times.append(entry.request_time)
     if entry.upstream_response_time is not None:
@@ -157,6 +181,15 @@ def format_text(report: Report, top: int = 10) -> str:
     section("Top paths", report.paths)
     section("Top IPs", report.ips)
     section("Top auth prefixes", report.auth_prefixes)
+    section("Top models", report.models)
+
+    if report.total_tokens or report.cost_usd:
+        lines.append("")
+        lines.append("Token / cost:")
+        lines.append(
+            f"  tokens prompt={report.prompt_tokens} completion={report.completion_tokens} total={report.total_tokens}"
+        )
+        lines.append(f"  estimated_cost_usd={round(report.cost_usd, 8)}")
 
     latency = report.latency_summary()
     lines.append("")

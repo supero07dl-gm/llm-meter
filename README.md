@@ -15,7 +15,7 @@
 
 **Lightweight usage analytics and abuse detection for OpenAI-compatible API gateways.**
 
-LLM Meter turns plain access logs from Nginx / Cloudflare / self-hosted AI gateways into useful usage reports: request volume, status codes, top IPs, auth prefixes, paths, latency, and possible abuse patterns.
+LLM Meter turns plain access logs from Nginx / Cloudflare / self-hosted AI gateways into useful usage reports: request volume, status codes, top IPs, auth prefixes, paths, latency, token usage, estimated cost, and possible abuse patterns.
 
 It is designed for people running OpenAI-compatible API endpoints through tools like CLIProxyAPI, OneAPI/NewAPI, LiteLLM, LocalAI, Ollama-compatible gateways, or custom reverse proxies.
 
@@ -29,6 +29,7 @@ Self-hosted LLM API gateways are easy to expose, but hard to observe:
 - Are 401/429/5xx errors spiking?
 - Which API key prefix is being abused?
 - Are streaming requests getting slow?
+- Which model or key prefix is burning tokens and cost?
 - Did a public shared endpoint start attracting bot traffic?
 
 LLM Meter starts with the boring, reliable source of truth: your gateway access logs.
@@ -45,6 +46,7 @@ LLM Meter starts with the boring, reliable source of truth: your gateway access 
 - Works locally, in Docker, or in CI.
 - YAML config for long-running deployments.
 - Database retention pruning for small VPS disks.
+- Token and estimated cost analytics from JSON gateway logs.
 - Safe-by-default examples: log short auth prefixes, never full API keys.
 
 ## Quick start
@@ -173,6 +175,23 @@ python3 -m llm_meter export-html --db llm-meter.db --output report.html
 
 This is useful for attaching reports to issues, incident notes, or status pages without running the live dashboard.
 
+## Token and cost analytics
+
+If your gateway emits JSON logs with model / usage / cost fields, LLM Meter rolls them up automatically:
+
+```json
+{"timestamp":"2026-06-09T02:00:00Z","ip":"203.0.113.10","host":"api.example","method":"POST","path":"/v1/chat/completions","status":200,"model":"gpt-4o-mini","prompt_tokens":1000,"completion_tokens":500,"total_tokens":1500,"cost_usd":0.000675}
+```
+
+Reports include:
+
+- total prompt / completion / total tokens
+- estimated total cost in USD
+- top models by request count
+- estimated cost by model
+
+The same fields are exposed in JSON reports, the web dashboard, and static HTML export.
+
 ## Alerts and webhooks
 
 Print current abuse/health signals:
@@ -256,6 +275,7 @@ Gateway presets:
 | Nginx custom gateway log | Supported |
 | Cloudflare real IP fields | Supported when present in Nginx log |
 | Cloudflare Logpush JSON | Supported |
+| JSON logs with model / token / cost fields | Supported |
 | LiteLLM structured logs | Planned |
 | OneAPI/NewAPI logs | Planned |
 
@@ -272,6 +292,7 @@ Gateway presets:
 - [x] YAML config file
 - [x] Configurable alert rules
 - [x] SQLite retention pruning
+- [x] Token / cost analytics from JSON logs
 - [ ] Homebrew / PyPI package
 - [ ] Richer dashboard charts
 
