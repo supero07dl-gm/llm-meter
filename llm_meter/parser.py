@@ -93,7 +93,7 @@ def _parse_request(value: str) -> tuple[str, str, str]:
 
 
 def parse_line(line: str) -> Optional[LogEntry]:
-    line = line.rstrip("\n")
+    line = line.rstrip("\r\n")
     if not line:
         return None
     if line.lstrip().startswith("{"):
@@ -186,10 +186,12 @@ def _parse_json_time(value) -> Optional[datetime]:
     if not value:
         return None
     if isinstance(value, (int, float)):
-        # Cloudflare may use nanoseconds in some exports. Be permissive.
-        if value > 1_000_000_000_000_000_000:  # nanoseconds
+        # Cloudflare and other gateways may use different precision levels.
+        if value > 1_000_000_000_000_000_000:  # nanoseconds (year ~2001+)
             value = value / 1_000_000_000
-        elif value > 10_000_000_000:  # milliseconds
+        elif value > 1_000_000_000_000_000:  # microseconds (year ~1970-2001)
+            value = value / 1_000_000
+        elif value > 10_000_000_000:  # milliseconds (year 1970+)
             value = value / 1000
         return datetime.fromtimestamp(value, tz=timezone.utc)
     text = str(value).replace("Z", "+00:00")

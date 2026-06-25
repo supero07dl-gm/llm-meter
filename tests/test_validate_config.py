@@ -87,3 +87,22 @@ def test_validate_config_cli_json(tmp_path):
     payload = json.loads(proc.stdout)
     assert payload["ok"] is False
     assert payload["path"] == str(config_path)
+
+
+def test_analyze_exits_nonzero_when_no_lines_parsed(tmp_path):
+    from llm_meter.__main__ import main
+
+    log = tmp_path / "empty.log"
+    log.write_text("", encoding="utf-8")
+    exit_code = main(["analyze", str(log)])
+    assert exit_code == 1
+
+
+def test_ingest_exits_nonzero_when_no_lines_parsed(tmp_path):
+    from llm_meter.__main__ import main
+
+    log = tmp_path / "empty.log"
+    log.write_text("", encoding="utf-8")
+    db = tmp_path / "meter.db"
+    exit_code = main(["ingest", str(log), "--db", str(db)])
+    assert exit_code == 1

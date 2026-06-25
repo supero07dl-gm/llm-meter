@@ -120,3 +120,51 @@ def test_optional_float_returns_none_for_non_numeric(tmp_path):
     assert _optional_float("") is None
     assert _optional_float(3.14) == 3.14
     assert _optional_float("3.14") == 3.14
+
+
+def test_yaml_parser_reports_line_number_on_bad_indent():
+    from llm_meter.config import _parse_simple_yaml
+
+    bad_yaml = "key: value\n bad_key: value\n"
+    try:
+        _parse_simple_yaml(bad_yaml)
+        assert False, "expected ValueError"
+    except ValueError as exc:
+        msg = str(exc)
+        assert "line 2" in msg
+        assert "invalid indentation" in msg
+
+
+def test_yaml_parser_reports_line_number_on_missing_colon():
+    from llm_meter.config import _parse_simple_yaml
+
+    bad_yaml = "key: value\nbad line\n"
+    try:
+        _parse_simple_yaml(bad_yaml)
+        assert False, "expected ValueError"
+    except ValueError as exc:
+        msg = str(exc)
+        assert "line 2" in msg
+        assert "expected key: value" in msg
+
+
+def test_storage_creates_wal_journal(tmp_path):
+    """The connect() function should enable WAL journal mode."""
+    db = tmp_path / "meter.db"
+    from llm_meter.storage import connect
+
+    conn = connect(db)
+    mode = conn.execute("PRAGMA journal_mode").fetchone()[0]
+    conn.close()
+    assert mode == "wal"
+
+
+def test_storage_has_busy_timeout(tmp_path):
+    """The connect() function should set a busy timeout."""
+    db = tmp_path / "meter.db"
+    from llm_meter.storage import connect
+
+    conn = connect(db)
+    timeout = conn.execute("PRAGMA busy_timeout").fetchone()[0]
+    conn.close()
+    assert timeout == 5000

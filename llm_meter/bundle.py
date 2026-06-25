@@ -23,7 +23,7 @@ def export_bundle(db_path: str | Path, output: str | Path, top: int = 10) -> dic
     manifest = _manifest(payload)
 
     with ZipFile(output, "w", compression=ZIP_DEFLATED) as archive:
-        archive.writestr("report.html", render_dashboard(db_path))
+        archive.writestr("report.html", render_dashboard(db_path, top=top))
         archive.writestr("report.md", render_markdown_report(db_path, top=top))
         archive.writestr("report.json", json.dumps(payload, indent=2, ensure_ascii=False))
         archive.writestr("manifest.json", json.dumps(manifest, indent=2, ensure_ascii=False))
