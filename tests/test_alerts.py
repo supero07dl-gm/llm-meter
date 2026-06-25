@@ -1,6 +1,13 @@
-from llm_meter.alerts import build_alert_payload, format_alert_text, should_alert
+from llm_meter.alerts import build_alert_payload, format_alert_text, send_webhook, should_alert
 from llm_meter.analyzer import analyze_lines
 from llm_meter.storage import ingest_lines
+
+
+def test_send_webhook_returns_error_on_invalid_url():
+    """Webhook should return (-1, error_message) on connection failure, not crash."""
+    status, body = send_webhook("http://invalid.invalid:1/webhook", {"test": True}, timeout=1.0)
+    assert status == -1
+    assert "failed" in body.lower()
 
 
 def test_signals_no_nameerror_with_many_auth_prefixes(tmp_path):

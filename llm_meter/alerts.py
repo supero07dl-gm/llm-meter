@@ -159,9 +159,12 @@ def send_webhook(url: str, payload: dict, timeout: float = 10.0) -> tuple[int, s
         headers={"Content-Type": "application/json", "User-Agent": "llm-meter"},
         method="POST",
     )
-    with request.urlopen(req, timeout=timeout) as resp:  # noqa: S310 - user-provided webhook URL is intentional
-        body = resp.read(4096).decode("utf-8", errors="replace")
-        return resp.status, body
+    try:
+        with request.urlopen(req, timeout=timeout) as resp:  # noqa: S310 - user-provided webhook URL is intentional
+            body = resp.read(4096).decode("utf-8", errors="replace")
+            return resp.status, body
+    except Exception as exc:  # noqa: BLE001 - network calls need broad error handling
+        return -1, f"webhook failed: {exc}"
 
 
 def should_alert(payload: dict, include_ok: bool = False) -> bool:

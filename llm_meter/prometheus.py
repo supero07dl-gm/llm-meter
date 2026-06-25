@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hmac
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -85,7 +86,7 @@ def serve_prometheus(db_path: str | Path, host: str = "127.0.0.1", port: int = 9
 
 
 def _label(value) -> str:
-    return str(value).replace("\\", "\\\\").replace("\n", "\\n").replace('"', '\\"')
+    return str(value).replace("\\", "\\\\").replace("\r", "\\r").replace("\n", "\\n").replace('"', '\\"')
 
 
 def _number(value) -> str:
@@ -97,5 +98,5 @@ def _number(value) -> str:
 def _check_auth(handler, token: str) -> bool:
     auth = handler.headers.get("Authorization", "")
     if auth.startswith("Bearer "):
-        return auth[7:] == token
+        return hmac.compare_digest(auth[7:], token)
     return False

@@ -12,6 +12,16 @@ def test_parse_json_time_handles_nanosecond_timestamp():
     assert dt.day == 15
 
 
+def test_parse_json_time_handles_microsecond_timestamp():
+    # Microsecond timestamp for 2024-01-15 12:00:00 UTC:
+    # 1705312800000000 us
+    dt = _parse_json_time(1_705_312_800_000_000)
+    assert dt is not None
+    assert dt.year == 2024
+    assert dt.month == 1
+    assert dt.day == 15
+
+
 def test_parse_json_time_handles_millisecond_timestamp():
     # Millisecond timestamp for 2024-01-15 12:00:00 UTC:
     # 1705312800000 ms
@@ -72,6 +82,15 @@ def test_parse_cloudflare_logpush_json_line():
     assert entry.status == 200
     assert entry.body_bytes == 1234
     assert entry.request_time == 1.234
+
+
+def test_parse_crlf_line_endings():
+    """Lines with \\r\\n should parse correctly after stripping."""
+    line = '203.0.113.10 realip=- cf=- host=a.example auth_prefix=a [09/Jun/2026:02:00:01 +0000] "GET /v1/models HTTP/2.0" 200 1 rt=0.1 uct=0.01 urt=0.09 "-" "curl"\r\n'
+    entry = parse_line(line)
+    assert entry is not None
+    assert entry.ip == "203.0.113.10"
+    assert entry.status == 200
 
 
 def test_analyze_lines_counts_status_and_ips():

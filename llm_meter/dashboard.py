@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import html
+import hmac
 import json
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -92,17 +93,17 @@ def _limit_from_query(query: str) -> int | None:
     return value if value > 0 else None
 
 
-def _payload(db_path: Path, limit: int | None = None) -> dict:
+def _payload(db_path: Path, limit: int | None = None, top: int = 10) -> dict:
     report = report_from_db(db_path, limit=limit)
-    payload = report.to_dict(top=10)
+    payload = report.to_dict(top=top)
     payload["hourly"] = hourly_counts(db_path, limit=limit)
     if limit is not None:
         payload["limit"] = limit
     return payload
 
 
-def render_dashboard(db_path: str | Path, limit: int | None = None) -> str:
-    payload = _payload(Path(db_path), limit=limit)
+def render_dashboard(db_path: str | Path, limit: int | None = None, top: int = 10) -> str:
+    payload = _payload(Path(db_path), limit=limit, top=top)
     total = payload["parsed_lines"]
     status_classes = payload["status_classes"]
     latency = payload["latency"]
@@ -183,7 +184,7 @@ def esc(value) -> str:
 def _check_auth(handler, token: str) -> bool:
     auth = handler.headers.get("Authorization", "")
     if auth.startswith("Bearer "):
-        return auth[7:] == token
+        return hmac.compare_digest(auth[7:], token)
     return False
 
 

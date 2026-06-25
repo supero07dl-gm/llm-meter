@@ -8,3 +8,8 @@ build/
 *.egg-info/
 .env
 .DS_Store
+.mypy_cache/
+.coverage
+htmlcov/
+.tox/
+.gh/
