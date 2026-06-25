@@ -1,5 +1,42 @@
 from llm_meter.alerts import build_alert_payload, format_alert_text, should_alert
+from llm_meter.analyzer import analyze_lines
 from llm_meter.storage import ingest_lines
+
+
+def test_signals_no_nameerror_with_many_auth_prefixes(tmp_path):
+    """Regression: signals() must not crash when there are 10+ unique auth prefixes."""
+    db = tmp_path / "meter.db"
+    lines = []
+    for i in range(15):
+        lines.append(
+            f'203.0.113.{i % 256} realip=- cf=- host=a.example auth_prefix=key-{i:02d} '
+            f'[09/Jun/2026:02:00:{i:02d} +0000] "GET /v1/models HTTP/2.0" 200 1 rt=0.1 uct=0.01 urt=0.09 "-" "curl"'
+        )
+    ingest_lines(lines, db)
+    payload = build_alert_payload(db)
+    # Should not raise NameError; signal should be present.
+    kinds = {s["kind"] for s in payload["signals"]}
+    assert "high_auth_prefix_diversity" in kinds
+
+
+def test_max_requests_per_ip_checks_all_ips(tmp_path):
+    """Regression: max_requests_per_ip should flag any IP above threshold, not just top 10."""
+    db = tmp_path / "meter.db"
+    lines = []
+    # 15 distinct IPs, each with exactly 5 requests. Threshold is 3.
+    for i in range(15):
+        for j in range(5):
+            lines.append(
+                f'203.0.113.{i} realip=- cf=- host=a.example auth_prefix=a '
+                f'[09/Jun/2026:02:00:{j:02d} +0000] "GET /v1/models HTTP/2.0" 200 1 rt=0.1 uct=0.01 urt=0.09 "-" "curl"'
+            )
+    ingest_lines(lines, db)
+    payload = build_alert_payload(db, rules={"max_requests_per_ip": 3})
+    kinds = {s["kind"] for s in payload["signals"]}
+    assert "high_ip_volume" in kinds
+    # All 15 IPs should be flagged (5 requests each > threshold of 3)
+    ip_signals = [s for s in payload["signals"] if s["kind"] == "high_ip_volume"]
+    assert len(ip_signals) == 15
 
 
 def test_alert_payload_without_signals(tmp_path):

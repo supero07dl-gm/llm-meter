@@ -187,9 +187,9 @@ def _parse_json_time(value) -> Optional[datetime]:
         return None
     if isinstance(value, (int, float)):
         # Cloudflare may use nanoseconds in some exports. Be permissive.
-        if value > 10_000_000_000_000:
+        if value > 1_000_000_000_000_000_000:  # nanoseconds
             value = value / 1_000_000_000
-        elif value > 10_000_000_000:
+        elif value > 10_000_000_000:  # milliseconds
             value = value / 1000
         return datetime.fromtimestamp(value, tz=timezone.utc)
     text = str(value).replace("Z", "+00:00")

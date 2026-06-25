@@ -70,7 +70,7 @@ def _rule_signals(report, rules: dict) -> list[dict]:
     max_requests_per_ip = rules.get("max_requests_per_ip")
     if max_requests_per_ip is not None:
         threshold = int(max_requests_per_ip)
-        for ip, count in report.ips.most_common(10):
+        for ip, count in report.ips.most_common():
             if count > threshold:
                 signals.append({
                     "level": "warn",
