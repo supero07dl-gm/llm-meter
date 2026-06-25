@@ -115,6 +115,19 @@ def _rule_signals(report, rules: dict) -> list[dict]:
                     "threshold": threshold,
                 })
 
+    max_auth_prefix_count = rules.get("max_auth_prefix_count")
+    if max_auth_prefix_count is not None:
+        threshold = int(max_auth_prefix_count)
+        unique_count = sum(1 for v in report.auth_prefixes.values() if v > 0)
+        if unique_count > threshold:
+            signals.append({
+                "level": "warn",
+                "kind": "high_auth_prefix_diversity",
+                "message": f"{unique_count} unique auth prefixes exceeds threshold {threshold}",
+                "unique_auth_prefixes": unique_count,
+                "threshold": threshold,
+            })
+
     return signals
 
 

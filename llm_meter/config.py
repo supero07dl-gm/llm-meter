@@ -14,6 +14,7 @@ class AlertRules:
     max_total_cost_usd: float | None = None
     max_total_tokens: int | None = None
     max_model_cost_usd: float | None = None
+    max_auth_prefix_count: int | None = None
 
     @classmethod
     def from_dict(cls, data: dict[str, Any] | None) -> "AlertRules":
@@ -26,6 +27,7 @@ class AlertRules:
             max_total_cost_usd=_optional_float(data.get("max_total_cost_usd")),
             max_total_tokens=_optional_int(data.get("max_total_tokens")),
             max_model_cost_usd=_optional_float(data.get("max_model_cost_usd")),
+            max_auth_prefix_count=_optional_int(data.get("max_auth_prefix_count")),
         )
 
     def to_dict(self) -> dict[str, float | int]:
@@ -38,6 +40,7 @@ class AlertRules:
             "max_total_cost_usd",
             "max_total_tokens",
             "max_model_cost_usd",
+            "max_auth_prefix_count",
         ):
             value = getattr(self, name)
             if value is not None:
@@ -150,6 +153,7 @@ def validate_config(path: str | Path) -> dict[str, Any]:
         "max_total_cost_usd",
         "max_total_tokens",
         "max_model_cost_usd",
+        "max_auth_prefix_count",
     ):
         value = getattr(rules, name)
         if value is None:
