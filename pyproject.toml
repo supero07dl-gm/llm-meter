@@ -1,11 +1,14 @@
 [project]
 name = "llm-meter"
 version = "0.23.0"
-description = "Lightweight usage analytics and abuse detection for OpenAI-compatible API gateways"
+description = "Lightweight usage analytics and abuse detection for OpenAPI-compatible API gateways"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
-authors = [{ name = "tarai-dl" }]
+authors = [
+    { name = "tarai-dl" },
+    { name = "supero07dl-gm" },
+]
 keywords = ["llm", "openai", "nginx", "observability", "api-gateway", "analytics"]
 classifiers = [
     "Development Status :: 3 - Alpha",
