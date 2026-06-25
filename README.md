@@ -390,3 +390,8 @@ Good first issues:
 ## License
 
 MIT
+
+## Authors
+
+- **tarai-dl** — [GitHub](https://github.com/tarai-dl)
+- **supero07dl-gm** — [GitHub](https://github.com/supero07dl-gm)
