@@ -42,6 +42,9 @@ MIGRATIONS = {
 def connect(path: str | Path) -> sqlite3.Connection:
     conn = sqlite3.connect(path)
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA busy_timeout=5000")
+    conn.execute("PRAGMA foreign_keys=ON")
     conn.executescript(SCHEMA)
     _migrate(conn)
     return conn
@@ -157,8 +160,6 @@ def report_from_db(db_path: str | Path, limit: int | None = None) -> Report:
 def _parse_iso(value: str | None):
     if not value:
         return None
-    from datetime import datetime
-
     try:
         return datetime.fromisoformat(value)
     except ValueError:
@@ -172,6 +173,8 @@ def hourly_counts(db_path: str | Path, limit: int | None = None) -> list[dict]:
     if limit is not None:
         source = "(SELECT * FROM entries ORDER BY id DESC LIMIT ?)"
         params = (limit,)
+    if source not in ("entries", "(SELECT * FROM entries ORDER BY id DESC LIMIT ?)"):
+        raise ValueError(f"invalid query source: {source!r}")
     rows = conn.execute(
         f"""
         SELECT substr(ts, 1, 13) AS hour, COUNT(*) AS requests,

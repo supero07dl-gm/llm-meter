@@ -196,9 +196,10 @@ def _parse_simple_yaml(text: str) -> dict[str, Any]:
     i = 0
     while i < len(lines):
         raw = lines[i]
+        line_num = i + 1
         indent = len(raw) - len(raw.lstrip(" "))
         if indent % 2:
-            raise ValueError(f"invalid indentation: {raw!r}")
+            raise ValueError(f"line {line_num}: invalid indentation (only even-space indentation is supported): {raw!r}")
         stripped = raw.strip()
 
         # Handle list item: "- value"
@@ -208,13 +209,13 @@ def _parse_simple_yaml(text: str) -> dict[str, Any]:
             while stack and not isinstance(stack[-1][1], list):
                 stack.pop()
             if not stack:
-                raise ValueError(f"list item without parent: {raw!r}")
+                raise ValueError(f"line {line_num}: list item without a parent mapping: {raw!r}")
             stack[-1][1].append(_parse_scalar(item_value))
             i += 1
             continue
 
         if ":" not in stripped:
-            raise ValueError(f"expected key: value line: {raw!r}")
+            raise ValueError(f"line {line_num}: expected key: value line, got: {raw!r}")
 
         key, value = stripped.split(":", 1)
         key = key.strip()

@@ -34,7 +34,11 @@ def cmd_analyze(args: argparse.Namespace) -> int:
         print(json.dumps(report.to_dict(top=args.top), indent=2, ensure_ascii=False))
     else:
         print(format_text(report, top=args.top))
-    return 0 if report.parsed else 2
+    if not report.parsed:
+        print("no lines parsed", file=sys.stderr)
+        return 1
+    return 0
+    return 0
 
 
 def cmd_ingest(args: argparse.Namespace) -> int:
@@ -44,7 +48,10 @@ def cmd_ingest(args: argparse.Namespace) -> int:
         print(json.dumps(result, indent=2, ensure_ascii=False))
     else:
         print(f"Inserted {result['inserted']} entries into {args.db} ({result['failed']} failed lines)")
-    return 0 if result["inserted"] else 2
+    if not result["inserted"]:
+        print("no entries inserted", file=sys.stderr)
+        return 1
+    return 0
 
 
 def cmd_report(args: argparse.Namespace) -> int:
@@ -68,12 +75,20 @@ def cmd_report(args: argparse.Namespace) -> int:
 
 
 def cmd_serve(args: argparse.Namespace) -> int:
-    serve_dashboard(args.db, host=args.host, port=args.port, auth_token=args.auth_token)
+    try:
+        serve_dashboard(args.db, host=args.host, port=args.port, auth_token=args.auth_token)
+    except OSError as exc:
+        print(f"failed to start dashboard server on {args.host}:{args.port}: {exc}", file=sys.stderr)
+        return 1
     return 0
 
 
 def cmd_export_prometheus(args: argparse.Namespace) -> int:
-    serve_prometheus(args.db, host=args.host, port=args.port, top=args.top, auth_token=args.auth_token)
+    try:
+        serve_prometheus(args.db, host=args.host, port=args.port, top=args.top, auth_token=args.auth_token)
+    except OSError as exc:
+        print(f"failed to start Prometheus exporter on {args.host}:{args.port}: {exc}", file=sys.stderr)
+        return 1
     return 0
 
 
