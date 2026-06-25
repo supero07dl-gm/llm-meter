@@ -13,7 +13,7 @@ def test_export_html_command_writes_report(tmp_path):
 
     code = main(["export-html", "--db", str(db), "--output", str(out)])
     assert code == 0
-    html = out.read_text()
+    html = out.read_text(encoding="utf-8")
     assert "LLM Meter" in html
     assert "Top IPs" in html
     assert "203.0.113.10" in html

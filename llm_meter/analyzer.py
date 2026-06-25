@@ -114,6 +114,16 @@ class Report:
                 "seconds": round(max(self.request_times), 4),
             })
 
+        unique_auth = sum(1 for v in self.auth_prefixes.values() if v > 0)
+        if unique_auth >= 10:
+            signals.append({
+                "level": "warn",
+                "kind": "high_auth_prefix_diversity",
+                "message": f"{unique_auth} unique auth prefixes seen — possible credential abuse",
+                "unique_auth_prefixes": unique_auth,
+                "total_auth_prefixes": len(report.auth_prefixes),
+            })
+
         return signals
 
 
