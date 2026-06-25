@@ -68,12 +68,12 @@ def cmd_report(args: argparse.Namespace) -> int:
 
 
 def cmd_serve(args: argparse.Namespace) -> int:
-    serve_dashboard(args.db, host=args.host, port=args.port)
+    serve_dashboard(args.db, host=args.host, port=args.port, auth_token=args.auth_token)
     return 0
 
 
 def cmd_export_prometheus(args: argparse.Namespace) -> int:
-    serve_prometheus(args.db, host=args.host, port=args.port, top=args.top)
+    serve_prometheus(args.db, host=args.host, port=args.port, top=args.top, auth_token=args.auth_token)
     return 0
 
 
@@ -218,6 +218,7 @@ def build_parser() -> argparse.ArgumentParser:
     serve.add_argument("--db", required=True, help="SQLite database path")
     serve.add_argument("--host", default="127.0.0.1", help="listen host")
     serve.add_argument("--port", type=int, default=8765, help="listen port")
+    serve.add_argument("--auth-token", default=None, help="require Bearer token for access (optional)")
     serve.set_defaults(func=cmd_serve)
 
     exporter = sub.add_parser("export-prometheus", help="serve Prometheus metrics from a SQLite database")
@@ -225,6 +226,7 @@ def build_parser() -> argparse.ArgumentParser:
     exporter.add_argument("--host", default="127.0.0.1", help="listen host")
     exporter.add_argument("--port", type=int, default=9108, help="listen port")
     exporter.add_argument("--top", type=int, default=50, help="top N label values for high-cardinality metrics")
+    exporter.add_argument("--auth-token", default=None, help="require Bearer token for access (optional)")
     exporter.set_defaults(func=cmd_export_prometheus)
 
     alert = sub.add_parser("alert", help="emit or send webhook alerts based on current signals")

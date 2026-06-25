@@ -1,5 +1,34 @@
-from llm_meter.parser import parse_line
+from llm_meter.parser import _parse_json_time, parse_line
 from llm_meter.analyzer import analyze_lines
+
+
+def test_parse_json_time_handles_nanosecond_timestamp():
+    # Nanosecond timestamp for 2024-01-15 12:00:00 UTC:
+    # 1705312800000000000 ns
+    dt = _parse_json_time(1_705_312_800_000_000_000)
+    assert dt is not None
+    assert dt.year == 2024
+    assert dt.month == 1
+    assert dt.day == 15
+
+
+def test_parse_json_time_handles_millisecond_timestamp():
+    # Millisecond timestamp for 2024-01-15 12:00:00 UTC:
+    # 1705312800000 ms
+    dt = _parse_json_time(1_705_312_800_000)
+    assert dt is not None
+    assert dt.year == 2024
+    assert dt.month == 1
+    assert dt.day == 15
+
+
+def test_parse_json_time_handles_second_timestamp():
+    # Second timestamp for 2024-01-15 12:00:00 UTC: 1705312800
+    dt = _parse_json_time(1_705_312_800)
+    assert dt is not None
+    assert dt.year == 2024
+    assert dt.month == 1
+    assert dt.day == 15
 
 
 def test_parse_cpa_combined_log_line():

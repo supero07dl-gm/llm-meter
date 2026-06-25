@@ -43,11 +43,14 @@ footer { color: #64748b; margin-top: 28px; font-size: 13px; }
 """
 
 
-def serve_dashboard(db_path: str | Path, host: str = "127.0.0.1", port: int = 8765) -> None:
+def serve_dashboard(db_path: str | Path, host: str = "127.0.0.1", port: int = 8765, auth_token: str | None = None) -> None:
     db_path = Path(db_path)
 
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self):  # noqa: N802 - stdlib API
+            if auth_token and not _check_auth(self, auth_token):
+                self._send(401, '{"error":"unauthorized"}', "application/json; charset=utf-8")
+                return
             parsed = urlparse(self.path)
             if parsed.path == "/healthz":
                 self._send(200, "ok", "text/plain; charset=utf-8")
@@ -175,6 +178,13 @@ def render_dashboard(db_path: str | Path, limit: int | None = None) -> str:
 
 def esc(value) -> str:
     return html.escape(str(value))
+
+
+def _check_auth(handler, token: str) -> bool:
+    auth = handler.headers.get("Authorization", "")
+    if auth.startswith("Bearer "):
+        return auth[7:] == token
+    return False
 
 
 def metric(label: str, value) -> str:
