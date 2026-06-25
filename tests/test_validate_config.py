@@ -78,7 +78,6 @@ def test_validate_config_cli_json(tmp_path):
 
     proc = subprocess.run(
         [sys.executable, "-m", "llm_meter", "validate-config", "--config", str(config_path), "--json"],
-        cwd=str(tmp_path.parent.parent) if False else None,
         text=True,
         capture_output=True,
         check=False,

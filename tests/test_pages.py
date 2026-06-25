@@ -1,8 +1,10 @@
 from pathlib import Path
 
+REPO_ROOT = Path(__file__).resolve().parent.parent
+
 
 def test_pages_index_exists_and_links_demo_assets():
-    index = Path("docs/index.html")
+    index = REPO_ROOT / "docs" / "index.html"
     assert index.exists()
     html = index.read_text(encoding="utf-8")
 
@@ -14,7 +16,7 @@ def test_pages_index_exists_and_links_demo_assets():
 
 
 def test_pages_workflow_exists():
-    workflow = Path(".github/workflows/pages.yml")
+    workflow = REPO_ROOT / ".github" / "workflows" / "pages.yml"
     assert workflow.exists()
     text = workflow.read_text(encoding="utf-8")
 

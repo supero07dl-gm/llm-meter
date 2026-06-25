@@ -1,5 +1,5 @@
 from llm_meter.alerts import build_alert_payload
-from llm_meter.config import load_config
+from llm_meter.config import _optional_float, _optional_int, load_config
 from llm_meter.storage import ingest_lines, prune_db, report_from_db
 
 
@@ -75,3 +75,48 @@ def test_prune_db_removes_old_rows(tmp_path):
     report = report_from_db(db)
     assert report.parsed == 1
     assert dict(report.paths) == {"/new": 1}
+
+
+def test_load_config_supports_inline_yaml_list(tmp_path):
+    config_path = tmp_path / "list.yml"
+    config_path.write_text(
+        "allowed_hosts: [a.example, b.example, c.example]\n",
+        encoding="utf-8",
+    )
+    config = load_config(config_path)
+    assert config.alert.webhook_url is None
+    # The custom YAML parser stores list values in the raw dict;
+    # load_config doesn't currently use lists, but we verify parsing works.
+    raw = config_path.read_text(encoding="utf-8")
+    from llm_meter.config import _parse_simple_yaml
+
+    parsed = _parse_simple_yaml(raw)
+    assert parsed["allowed_hosts"] == ["a.example", "b.example", "c.example"]
+
+
+def test_load_config_supports_indented_yaml_list(tmp_path):
+    config_path = tmp_path / "list.yml"
+    config_path.write_text(
+        "allowed_hosts:\n  - a.example\n  - b.example\n  - c.example\n",
+        encoding="utf-8",
+    )
+    from llm_meter.config import _parse_simple_yaml
+
+    parsed = _parse_simple_yaml(config_path.read_text(encoding="utf-8"))
+    assert parsed["allowed_hosts"] == ["a.example", "b.example", "c.example"]
+
+
+def test_optional_int_returns_none_for_non_numeric(tmp_path):
+    assert _optional_int("abc") is None
+    assert _optional_int(None) is None
+    assert _optional_int("") is None
+    assert _optional_int(42) == 42
+    assert _optional_int("42") == 42
+
+
+def test_optional_float_returns_none_for_non_numeric(tmp_path):
+    assert _optional_float("abc") is None
+    assert _optional_float(None) is None
+    assert _optional_float("") is None
+    assert _optional_float(3.14) == 3.14
+    assert _optional_float("3.14") == 3.14

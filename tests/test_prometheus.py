@@ -1,5 +1,16 @@
-from llm_meter.prometheus import render_prometheus_metrics
+from llm_meter.prometheus import render_prometheus_metrics, _check_auth
 from llm_meter.storage import ingest_lines
+
+
+def test_check_auth_validates_bearer_token():
+    class FakeHandler:
+        def __init__(self, auth_header):
+            self.headers = {"Authorization": auth_header} if auth_header else {}
+
+    assert _check_auth(FakeHandler("Bearer secret123"), "secret123") is True
+    assert _check_auth(FakeHandler("Bearer wrong"), "secret123") is False
+    assert _check_auth(FakeHandler(""), "secret123") is False
+    assert _check_auth(FakeHandler("Basic abc"), "secret123") is False
 
 
 def test_render_prometheus_metrics_from_sqlite(tmp_path):

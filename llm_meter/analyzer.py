@@ -121,7 +121,7 @@ class Report:
                 "kind": "high_auth_prefix_diversity",
                 "message": f"{unique_auth} unique auth prefixes seen — possible credential abuse",
                 "unique_auth_prefixes": unique_auth,
-                "total_auth_prefixes": len(report.auth_prefixes),
+                "total_auth_prefixes": len(self.auth_prefixes),
             })
 
         return signals

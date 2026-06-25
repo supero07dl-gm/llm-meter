@@ -52,11 +52,14 @@ def render_prometheus_metrics(db_path: str | Path, top: int = 50) -> str:
     return "\n".join(lines) + "\n"
 
 
-def serve_prometheus(db_path: str | Path, host: str = "127.0.0.1", port: int = 9108, top: int = 50) -> None:
+def serve_prometheus(db_path: str | Path, host: str = "127.0.0.1", port: int = 9108, top: int = 50, auth_token: str | None = None) -> None:
     db_path = Path(db_path)
 
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self):  # noqa: N802
+            if auth_token and not _check_auth(self, auth_token):
+                self._send(401, "unauthorized\n", "text/plain; charset=utf-8")
+                return
             if self.path == "/healthz":
                 self._send(200, "ok\n", "text/plain; charset=utf-8")
                 return
@@ -89,3 +92,10 @@ def _number(value) -> str:
     if value is None:
         return "0"
     return str(value)
+
+
+def _check_auth(handler, token: str) -> bool:
+    auth = handler.headers.get("Authorization", "")
+    if auth.startswith("Bearer "):
+        return auth[7:] == token
+    return False

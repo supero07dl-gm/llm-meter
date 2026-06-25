@@ -183,32 +183,69 @@ def _parse_simple_yaml(text: str) -> dict[str, Any]:
 
     This intentionally avoids a runtime PyYAML dependency. Supported features are
     nested mappings via two-space indentation, scalar strings, booleans, ints,
-    floats, and null-like empty values.
+    floats, null-like empty values, and simple lists (inline and indented).
     """
-    root: dict[str, Any] = {}
-    stack: list[tuple[int, dict[str, Any]]] = [(-1, root)]
+    lines: list[str] = []
     for raw in text.splitlines():
         line = raw.split("#", 1)[0].rstrip()
-        if not line.strip():
-            continue
-        indent = len(line) - len(line.lstrip(" "))
+        if line.strip():
+            lines.append(line)
+
+    root: dict[str, Any] = {}
+    stack: list[tuple[int, dict[str, Any] | list[Any]]] = [(-1, root)]
+    i = 0
+    while i < len(lines):
+        raw = lines[i]
+        indent = len(raw) - len(raw.lstrip(" "))
         if indent % 2:
             raise ValueError(f"invalid indentation: {raw!r}")
-        stripped = line.strip()
+        stripped = raw.strip()
+
+        # Handle list item: "- value"
+        if stripped.startswith("- "):
+            item_value = stripped[2:].strip()
+            # Walk up the stack to find the parent list container.
+            while stack and not isinstance(stack[-1][1], list):
+                stack.pop()
+            if not stack:
+                raise ValueError(f"list item without parent: {raw!r}")
+            stack[-1][1].append(_parse_scalar(item_value))
+            i += 1
+            continue
+
         if ":" not in stripped:
             raise ValueError(f"expected key: value line: {raw!r}")
+
         key, value = stripped.split(":", 1)
         key = key.strip()
         value = value.strip()
         while stack and indent <= stack[-1][0]:
             stack.pop()
         parent = stack[-1][1]
+
         if not value:
-            child: dict[str, Any] = {}
+            # Empty value — could be a mapping or a list. Peek at the next
+            # line to decide.
+            child: dict[str, Any] | list[Any]
+            if i + 1 < len(lines):
+                next_indent = len(lines[i + 1]) - len(lines[i + 1].lstrip(" "))
+                next_stripped = lines[i + 1].strip()
+                if next_indent > indent and next_stripped.startswith("- "):
+                    child = []
+                else:
+                    child = {}
+            else:
+                child = {}
             parent[key] = child
             stack.append((indent, child))
+        elif value.startswith("[") and value.endswith("]"):
+            # Inline list: [item1, item2, item3]
+            inner = value[1:-1]
+            items = [_parse_scalar(item.strip()) for item in inner.split(",") if item.strip()]
+            parent[key] = items
         else:
             parent[key] = _parse_scalar(value)
+        i += 1
     return root
 
 
@@ -241,10 +278,16 @@ def _optional_str(value: Any) -> str | None:
 def _optional_int(value: Any) -> int | None:
     if value is None or value == "":
         return None
-    return int(value)
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        return None
 
 
 def _optional_float(value: Any) -> float | None:
     if value is None or value == "":
         return None
-    return float(value)
+    try:
+        return float(value)
+    except (ValueError, TypeError):
+        return None
